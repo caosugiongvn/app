@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Ứng dụng quản lý bán hàng, tồn kho từ xa qua điện thoại với tính năng CTV & Tài xế">
+  <title>Quản Lý Bán Hàng & Kho Hàng Từ Xa</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- CSS System -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <div class="app-wrapper">
+    <!-- Navbar Header -->
+    <header class="navbar glass-card">
+      <div class="brand-logo">
+        <div class="logo-icon">📦</div>
+        <div>
+          <div class="brand-title">SmartInventory Pro</div>
+          <div class="brand-subtitle">Quản lý Bán hàng & Kho từ xa</div>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- Guest Actions -->
+        <div id="guest-auth-actions" class="auth-btn-group">
+          <button id="btn-open-login" class="btn btn-secondary">🔑 Đăng Nhập</button>
+          <button id="btn-open-register" class="btn btn-success">📱 Đăng Ký (SĐT)</button>
+        </div>
+
+        <!-- User Profile Badge (Logged In) -->
+        <div id="logged-user-badge" class="user-profile-badge hidden">
+          <div class="avatar-circle" id="user-avatar-initials">CTV</div>
+          <div class="user-info-text">
+            <div id="user-display-name" class="user-name">Nguyễn Văn An</div>
+            <div id="user-display-role" class="user-role-tag">Cộng tác viên</div>
+          </div>
+          <button id="btn-apply-ctv" class="btn btn-warning" style="display: none; font-size: 12px; padding: 6px 12px;" title="Gửi yêu cầu làm CTV">💼 Đăng Ký Làm CTV</button>
+          <button id="btn-user-logout" class="btn btn-secondary btn-icon" title="Đăng xuất">🚪</button>
+        </div>
+
+        <button id="remote-connect-btn" class="btn btn-primary" title="Kết nối điện thoại">
+          <span>📲 Kết nối Điện thoại</span>
+        </button>
+        <button id="theme-toggle" class="btn btn-secondary btn-icon" title="Đổi giao diện">
+          <span class="theme-icon">🌙</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Role Switcher Navigation -->
+    <nav class="role-tabs">
+      <button class="role-btn active" data-tab="pricelist">
+        <span id="tab-pricelist-text">⚡ Duyệt Đơn Nhanh</span>
+      </button>
+      <button class="role-btn" data-tab="dashboard">
+        <span>📊 Dashboard</span>
+      </button>
+      <button class="role-btn" data-tab="inventory">
+        <span>📦 Tồn Kho</span>
+      </button>
+      <button class="role-btn" data-tab="ctv">
+        <span>🛒 Đặt Hàng</span>
+      </button>
+      <button class="role-btn" data-tab="driver">
+        <span>🚚 Tài Xế Giao Hàng</span>
+      </button>
+      <button class="role-btn" data-tab="users">
+        <span>👥 Danh Sách User</span>
+      </button>
+    </nav>
+
+    <!-- MAIN CONTENT VIEW CONTAINERS -->
+    <main id="main-content">
+      
+      <!-- VIEW 0: QUICK ORDER APPROVAL CENTER (Trung Tâm Duyệt Đơn Nhanh) -->
+      <section id="view-pricelist" class="tab-view active">
+        <div class="glass-card" style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h2 style="font-size: 18px; font-weight: 700; color: var(--accent-primary);">⚡ Trung Tâm Duyệt Đơn Nhanh (Quản Trị Viên)</h2>
+              <p style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;">Duyệt đơn hàng, phân công tài xế và chọn ngày giờ giao dự kiến nhanh chóng</p>
+            </div>
+            <span class="badge badge-info" style="font-size: 12px; padding: 6px 12px;">⚡ Duyệt đơn nhanh</span>
+          </div>
+
+          <!-- STATUS FILTER PILLS BAR -->
+          <div id="pricelist-status-filter-bar" style="margin-top: 14px;">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div id="pricelist-approval-container">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 1: DASHBOARD (Doanh Thu, Lợi Nhuận & Bảng Xếp Hạng CTV) -->
+      <section id="view-dashboard" class="tab-view" style="display: none;">
+        <!-- Stats Row -->
+        <div class="stats-grid">
+          <div class="glass-card stat-card revenue">
+            <div class="stat-header">
+              <span class="stat-title">Doanh Thu Tổng</span>
+              <span class="stat-icon">💰</span>
+            </div>
+            <div id="stat-revenue" class="stat-value">0 đ</div>
+            <div class="stat-subtitle">Từ các đơn giao thành công</div>
+          </div>
+
+          <div class="glass-card stat-card profit">
+            <div class="stat-header">
+              <span class="stat-title">Lợi Nhuận Ròng</span>
+              <span class="stat-icon">📈</span>
+            </div>
+            <div id="stat-profit" class="stat-value">0 đ</div>
+            <div id="stat-profit-margin" class="stat-subtitle">Biên lợi nhuận: 0%</div>
+          </div>
+
+          <div class="glass-card stat-card pending">
+            <div class="stat-header">
+              <span class="stat-title">Đơn Chờ Giao</span>
+              <span class="stat-icon">⏳</span>
+            </div>
+            <div id="stat-pending-orders" class="stat-value">0</div>
+            <div class="stat-subtitle">Đã tạm trừ kho khả dụng</div>
+          </div>
+
+          <div class="glass-card stat-card inventory">
+            <div class="stat-header">
+              <span class="stat-title">Tồn Kho 3 Chỉ Số</span>
+              <span class="stat-icon">📊</span>
+            </div>
+            <div id="stat-inventory-summary" class="stat-value">0 / 0 / 0</div>
+            <div class="stat-subtitle">Tồn thực / Tạm giữ / Khả dụng</div>
+          </div>
+        </div>
+
+        <!-- ADMIN ORDER APPROVAL & DRIVER ASSIGNMENT SECTION -->
+        <div id="admin-approval-section" class="glass-card" style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h3 style="font-size: 17px; font-weight: 700; color: var(--accent-primary);">📋 Duyệt Đơn Hàng & Phân Công Tài Xế (Quản Trị Viên)</h3>
+              <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">Chỉ Quản trị viên mới có quyền duyệt đơn, phân công tài xế và chọn ngày giao dự kiến</p>
+            </div>
+            <span class="badge badge-info" id="pending-approval-count-badge">⏳ 0 đơn chờ duyệt</span>
+          </div>
+
+          <div id="admin-approval-table-container" class="table-responsive">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- ADMIN QUICK PURCHASE / CALLBACK REQUESTS SECTION -->
+        <div id="admin-quick-purchase-section" class="glass-card" style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h3 style="font-size: 17px; font-weight: 700; color: var(--warning);">📞 Danh Sách Khách Hàng Mua Hàng Nhanh (SĐT Tư Vấn)</h3>
+              <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">Số điện thoại khách hàng nhập vào từ nút Mua Hàng Nhanh để Quản trị viên liên hệ tư vấn & chốt đơn</p>
+            </div>
+            <span class="badge badge-warning" id="admin-quick-purchase-count-badge">📞 0 SĐT chờ liên hệ</span>
+          </div>
+
+          <div id="admin-quick-purchase-table-container" class="table-responsive">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- Dashboard Main Content Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+          <!-- Left Column: CTV Leaderboard (Region & Overall) -->
+          <div class="glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 style="font-size: 16px; font-weight: 700;">🏆 Bảng Xếp Hạng Cộng Tác Viên</h3>
+                <p style="font-size: 12px; color: var(--text-secondary);">Xếp hạng theo điểm tích lũy & doanh số</p>
+              </div>
+              <select id="leaderboard-region-filter" class="form-select" style="width: auto; min-width: 130px;">
+                <option value="ALL">🌐 Tất cả khu vực</option>
+              </select>
+            </div>
+
+            <div id="leaderboard-container" class="leaderboard-list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Right Column: Regional Revenue & Recent Delivered Orders -->
+          <div class="glass-card">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">📍 Doanh Thu Theo Khu Vực</h3>
+            <div id="regional-stats-container" class="table-responsive" style="margin-bottom: 24px;">
+              <!-- Rendered via JS -->
+            </div>
+
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">✅ Đơn Hàng Mới Giao Thành Công</h3>
+            <div id="recent-orders-container" class="table-responsive">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: INVENTORY MANAGEMENT (Quản Lý Tồn Kho & Chỉnh Sửa Trực Tiếp) -->
+      <section id="view-inventory" class="tab-view" style="display: none;">
+        <div class="glass-card" style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h2 style="font-size: 18px; font-weight: 700;">📦 Danh Mục & Tồn Kho Sản Phẩm</h2>
+              <p style="font-size: 13px; color: var(--text-secondary);">Quản trị viên được phép chỉnh sửa trực tiếp Tên sản phẩm & Số lượng tồn kho ngay trên bảng</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button id="add-product-modal-btn" class="btn btn-primary">➕ Thêm Sản Phẩm</button>
+              <button id="import-stock-modal-btn" class="btn btn-success">📥 Nhập Kho</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="inventory-admin-notice" class="glass-card" style="margin-bottom: 16px; border-left: 4px solid var(--success); display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <span style="font-weight: 700; color: var(--success); font-size: 14px;">👑 Chế độ Quản Trị Viên:</span>
+              <span style="font-size: 13px; color: var(--text-secondary); margin-left: 6px;">Bạn có thể bấm nút "✏️ Sửa Tên / Số lượng" ở mỗi dòng để chỉnh sửa trực tiếp Tên sản phẩm và Số lượng tồn kho.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Mã SP</th>
+                  <th>Tên Sản Phẩm</th>
+                  <th>Giá Vốn</th>
+                  <th>Giá Bán</th>
+                  <th>Tồn Thực Tế</th>
+                  <th>Tạm Trừ (Giữ)</th>
+                  <th>Tồn Khả Dụng</th>
+                  <th>Điểm CTV</th>
+                  <th>Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table-body">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: ĐẶT HÀNG & BÁO GIÁ WORKSPACE -->
+      <section id="view-ctv" class="tab-view" style="display: none;">
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-bottom: 20px;">
+          
+          <!-- Left Column: Create Order Form -->
+          <div class="glass-card">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">🛒 Tạo Đơn Hàng Mới</h3>
+
+            <form id="create-order-form">
+              <!-- Admin Auto vs Manual CTV Mode Switcher (Visible only when Admin) -->
+              <div id="admin-order-mode-container" style="display: none; background: rgba(99, 102, 241, 0.1); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; border: 1px solid var(--accent-primary);">
+                <div style="font-size: 13px; font-weight: 700; color: var(--accent-primary); margin-bottom: 8px;">
+                  👑 Quyền Quản Trị Viên: Phương Thức Tính Đơn Cho CTV
+                </div>
+                <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                    <input type="radio" name="admin-ctv-assign-mode" value="AUTO" checked>
+                    <span>⚡ Lên Đơn Tự Động (Gán CTV Top 1 Khu Vực)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                    <input type="radio" name="admin-ctv-assign-mode" value="MANUAL">
+                    <span>✍️ Chọn CTV Thủ Công</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- AUTO MODE: Region Selector & Top 1 CTV Banner -->
+              <div id="admin-auto-region-wrapper" style="margin-bottom: 16px;">
+                <div class="form-group">
+                  <label class="form-label" style="font-weight: 600;">Khu Vực Giao Hàng * <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">(Hệ thống tự động chọn CTV có điểm cao nhất tuần ở khu vực này)</span></label>
+                  <select id="order-auto-region-select" class="form-select" style="font-weight: 600;">
+                    <!-- Region options populated via JS -->
+                  </select>
+                </div>
+
+                <!-- Top 1 CTV Notice Banner -->
+                <div id="top-ctv-auto-notice" style="background: rgba(16, 185, 129, 0.12); border: 1px solid var(--success); padding: 12px 14px; border-radius: 10px;">
+                  <div style="font-size: 14px; font-weight: 700; color: var(--success); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span>🏆 CTV Top 1 Khu Vực [<span id="auto-region-name">Hà Nội</span>]:</span>
+                    <span id="auto-top-ctv-name" style="color: #ffffff;">Nguyễn Văn An</span>
+                  </div>
+                  <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                    📞 SĐT: <strong id="auto-top-ctv-phone" style="color: var(--text-primary);">0901234567</strong> | Điểm tuần này: <span id="auto-top-ctv-points" style="color: var(--success); font-weight: 700;">+250 pts</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- MANUAL MODE: Manual CTV Select Dropdown -->
+              <div id="admin-manual-ctv-wrapper" class="form-group" style="display: none;">
+                <label class="form-label">Chọn Cộng Tác Viên Nhận Đơn *</label>
+                <select id="order-ctv-select" class="form-select">
+                  <!-- Rendered via JS -->
+                </select>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label class="form-label">Tên Khách Hàng</label>
+                  <input type="text" id="order-customer-name" class="form-control" placeholder="Nhập tên khách hàng" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Số Điện Thoại</label>
+                  <input type="tel" id="order-customer-phone" class="form-control" placeholder="09xxxx..." required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Địa Chỉ Giao Hàng</label>
+                <input type="text" id="order-customer-address" class="form-control" placeholder="Nhập địa chỉ nhận hàng" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Chọn Sản Phẩm & Số Lượng</label>
+                <div id="order-items-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
+                  <!-- Dynamic product rows rendered via JS -->
+                </div>
+                <button type="button" id="add-order-item-btn" class="btn btn-secondary" style="width: 100%;">➕ Thêm sản phẩm khác</button>
+              </div>
+
+              <div style="background: rgba(99, 102, 241, 0.1); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; border: 1px dashed var(--accent-primary);">
+                <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 600;">
+                  <span>Tạm tính tổng tiền:</span>
+                  <span id="order-total-preview" style="color: var(--accent-primary);">0 đ</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                  <span>Điểm CTV dự kiến:</span>
+                  <span id="order-points-preview" style="color: var(--success);">+0 pts</span>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%;">🚀 Lên Đơn Hàng</button>
+            </form>
+          </div>
+
+          <!-- Right Column: Product Price Quotes Catalog -->
+          <div class="glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 style="font-size: 16px; font-weight: 700; color: var(--accent-primary);">🏷️ Báo Giá Sản Phẩm Niêm Yết</h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Bấm "+ Chọn vào đơn" để đưa nhanh sản phẩm vào form bên trái</p>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <input type="text" id="ctv-price-search" class="form-control" placeholder="🔍 Tìm SP..." style="font-size: 12px; padding: 6px 10px; width: 130px;">
+                <select id="ctv-price-category" class="form-select" style="font-size: 12px; padding: 6px 10px; width: 130px;">
+                  <option value="ALL">📁 Tất cả danh mục</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="ctv-pricelist-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; max-height: 520px; overflow-y: auto; padding-right: 4px;">
+              <!-- Product price cards rendered via JS -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Bottom Row: Order History -->
+        <div class="glass-card">
+          <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">📋 Danh Sách Đơn Hàng Đã Đặt</h3>
+          <div id="ctv-orders-container" class="table-responsive">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- VIEW 4: DRIVER DASHBOARD (Vận Chuyển & Trạng Thái Đơn Của Tài Xế) -->
+      <section id="view-driver" class="tab-view" style="display: none;">
+        <div class="glass-card" style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+              <h2 id="driver-view-title" style="font-size: 18px; font-weight: 700;">🚚 Màn Hình Giao Hàng Của Tài Xế</h2>
+              <p id="driver-view-subtitle" style="font-size: 13px; color: var(--text-secondary);">Danh sách đơn hàng giao và thu hộ COD</p>
+            </div>
+            <select id="driver-filter-select" class="form-select" style="width: auto; min-width: 200px;">
+              <option value="ALL">🚚 Tất cả tài xế</option>
+            </select>
+          </div>
+
+          <!-- DRIVER SUMMARY & STATUS FILTER BANNER -->
+          <div id="driver-summary-banner" style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <div id="driver-orders-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+          <!-- Driver order cards rendered via JS -->
+        </div>
+      </section>
+
+      <!-- VIEW 5: USER MANAGEMENT & COMMISSION DISCOUNT (Danh Sách Người Dùng & Quản Lý Chiết Khấu) -->
+      <section id="view-users" class="tab-view" style="display: none;">
+        <!-- SECTION 1: COMMISSION DISCOUNT SETTINGS & LIVE TABLE -->
+        <div id="commission-management-card" class="glass-card" style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h2 style="font-size: 18px; font-weight: 700; color: var(--accent-primary);">💰 Quản Lý Bảng Giá Chiết Khấu & Hoa Hồng CTV</h2>
+              <p style="font-size: 13px; color: var(--text-secondary); margin: 2px 0 0 0;">Trong tuần CTV nào có điểm cao nhất sẽ hưởng mức hoa hồng cao nhất, các CTV còn lại hưởng mức trung bình</p>
+            </div>
+            <button id="btn-save-commission-settings" class="btn btn-success" style="font-weight: 600;">
+              💾 Lưu Cấu Hình Chiết Khấu
+            </button>
+          </div>
+
+          <!-- Commission Rates & Point Conversion Form -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; background: rgba(255,255,255,0.03); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-glass); margin-bottom: 16px;">
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label" style="font-weight: 700; color: var(--success);">👑 Đổi Điểm Top 1 Tuần (Mức Cao Nhất)</label>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="number" id="input-commission-top-point-val" class="form-control" value="1000" min="500" max="5000" step="50" style="font-weight: 800; font-size: 16px; color: var(--success);">
+                <span style="font-weight: 700; font-size: 13px; color: var(--text-secondary); white-space: nowrap;">đ / 1 điểm</span>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label" style="font-weight: 700; color: var(--accent-primary);">💼 Đổi Điểm CTV Thường (Mức Trung Bình)</label>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="number" id="input-commission-standard-point-val" class="form-control" value="500" min="100" max="2000" step="50" style="font-weight: 800; font-size: 16px; color: var(--accent-primary);">
+                <span style="font-weight: 700; font-size: 13px; color: var(--text-secondary); white-space: nowrap;">đ / 1 điểm</span>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label" style="font-weight: 700; color: var(--accent-secondary);">👑 Chiết Khấu % Top 1</label>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="number" id="input-commission-top-rate" class="form-control" value="15" min="0" max="100" step="0.5" style="font-weight: 800; font-size: 16px; color: var(--accent-secondary);">
+                <span style="font-weight: 700; font-size: 15px;">%</span>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label" style="font-weight: 700; color: var(--text-primary);">💼 Chiết Khấu % Thường</label>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="number" id="input-commission-standard-rate" class="form-control" value="8" min="0" max="100" step="0.5" style="font-weight: 800; font-size: 16px;">
+                <span style="font-weight: 700; font-size: 15px;">%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Commission Live Table Container -->
+          <div id="commission-live-table-container">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- SECTION 2: USER ACCOUNTS & PERMISSIONS TABLE -->
+        <div class="glass-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+              <h2 style="font-size: 18px; font-weight: 700;">👥 Danh Sách Tài Khoản Người Dùng & Phân Quyền</h2>
+              <p style="font-size: 13px; color: var(--text-secondary);">Tất cả tài khoản đăng ký bằng số điện thoại (Khách hàng & Cộng tác viên & Quản trị viên)</p>
+            </div>
+            <button id="btn-add-user-modal" class="btn btn-success">
+              <span>📱 Đăng Ký Tài Khoản Mới</span>
+            </button>
+          </div>
+
+          <div id="users-table-container" class="table-responsive">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL: KẾT NỐI ĐIỆN THOẠI TỪ XA (QR CODE) -->
+  <div id="remote-modal" class="modal-overlay">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h3 style="font-size: 18px; font-weight: 700;">📲 Truy Cập Từ Xa Bằng Điện Thoại</h3>
+        <button id="close-remote-modal-btn" class="btn btn-secondary btn-icon">✕</button>
+      </div>
+      <div style="text-align: center; padding: 10px 0;">
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+          Mở ứng dụng Camera hoặc Zalo trên điện thoại di động và quét mã QR dưới đây để mở ứng dụng lập tức:
+        </p>
+
+        <div style="background: #ffffff; padding: 16px; border-radius: var(--radius-md); display: inline-block; box-shadow: 0 4px 20px rgba(0,0,0,0.3); margin-bottom: 16px;">
+          <img id="qr-code-img" src="" alt="QR Code Truy cập" style="width: 220px; height: 220px; display: block;">
+        </div>
+
+        <div style="background: var(--bg-glass); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); text-align: left;">
+          <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Hoặc nhập URL trực tiếp vào trình duyệt di động:</div>
+          <div id="remote-url-list" style="font-family: monospace; font-size: 14px; color: var(--accent-primary); word-break: break-all;">
+            http://localhost:3000
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: THÊM SẢN PHẨM MỚI -->
+  <div id="add-product-modal" class="modal-overlay">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h3 style="font-size: 18px; font-weight: 700;">➕ Thêm Sản Phẩm Mới</h3>
+        <button id="close-add-product-modal-btn" class="btn btn-secondary btn-icon">✕</button>
+      </div>
+      <form id="add-product-form">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Mã Sản Phẩm</label>
+            <input type="text" id="new-prod-code" class="form-control" placeholder="SP005">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tên Sản Phẩm</label>
+            <input type="text" id="new-prod-name" class="form-control" placeholder="Tên sản phẩm..." required>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Giá Vốn (đ)</label>
+            <input type="number" id="new-prod-cost" class="form-control" placeholder="200000" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Giá Bán (đ)</label>
+            <input type="number" id="new-prod-price" class="form-control" placeholder="350000" required>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Tồn Kho Ban Đầu</label>
+            <input type="number" id="new-prod-stock" class="form-control" placeholder="50" value="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Điểm Thưởng CTV</label>
+            <input type="number" id="new-prod-points" class="form-control" placeholder="30" value="0">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Lưu Sản Phẩm</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NHẬP KHO BỔ SUNG -->
+  <div id="import-stock-modal" class="modal-overlay">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h3 style="font-size: 18px; font-weight: 700;">📥 Nhập Kho Bổ Sung</h3>
+        <button id="close-import-stock-modal-btn" class="btn btn-secondary btn-icon">✕</button>
+      </div>
+      <form id="import-stock-form">
+        <div class="form-group">
+          <label class="form-label">Chọn Sản Phẩm</label>
+          <select id="import-prod-select" class="form-select" required>
+            <!-- Rendered via JS -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Số Lượng Nhập</label>
+          <input type="number" id="import-qty" class="form-control" placeholder="Số lượng..." required min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ghi Chú</label>
+          <input type="text" id="import-note" class="form-control" placeholder="Ví dụ: Lô hàng mới nhập từ xưởng">
+        </div>
+        <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 10px;">Xác Nhận Nhập Kho</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ĐĂNG KÝ TÀI KHOẢN BẰNG SỐ ĐIỆN THOẠI -->
+  <div id="register-modal" class="modal-overlay">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h3 style="font-size: 18px; font-weight: 700;">📱 Đăng Ký Tài Khoản Mới</h3>
+        <button id="close-register-modal-btn" class="btn btn-secondary btn-icon">✕</button>
+      </div>
+      <form id="register-form">
+        <div class="form-group">
+          <label class="form-label">Số Điện Thoại (Tài khoản đăng nhập) *</label>
+          <input type="tel" id="reg-phone" class="form-control" placeholder="Ví dụ: 0901234567" required pattern="[0-9]{9,11}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Họ và Tên *</label>
+          <input type="text" id="reg-name" class="form-control" placeholder="Nguyễn Văn A" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mật Khẩu *</label>
+          <input type="password" id="reg-password" class="form-control" placeholder="Nhập mật khẩu..." required minlength="4">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nhập Lại Mật Khẩu *</label>
+          <input type="password" id="reg-confirm-password" class="form-control" placeholder="Nhập lại mật khẩu chính xác..." required minlength="4">
+        </div>
+        <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 10px; font-weight: 600;">
+          🚀 Hoàn Tất Đăng Ký
+        </button>
+        <div style="text-align: center; margin-top: 14px; font-size: 13px; color: var(--text-secondary);">
+          Đã có tài khoản? <a href="#" id="link-switch-to-login" style="color: var(--accent-primary); font-weight: 600; text-decoration: none;">Đăng nhập ngay</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ĐĂNG NHẬP -->
+  <div id="login-modal" class="modal-overlay">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h3 style="font-size: 18px; font-weight: 700;">🔑 Đăng Nhập Hệ Thống</h3>
+        <button id="close-login-modal-btn" class="btn btn-secondary btn-icon">✕</button>
+      </div>
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label">Số Điện Thoại *</label>
+          <input type="tel" id="login-phone" class="form-control" placeholder="Nhập số điện thoại..." required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mật Khẩu *</label>
+          <input type="password" id="login-password" class="form-control" placeholder="Nhập mật khẩu..." required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px; font-weight: 600;">
+          🔓 Đăng Nhập
+        </button>
+        <div style="text-align: center; margin-top: 14px; font-size: 13px; color: var(--text-secondary);">
+          Chưa có tài khoản? <a href="#" id="link-switch-to-register" style="color: var(--accent-primary); font-weight: 600; text-decoration: none;">Đăng ký bằng SĐT</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: THÔNG BÁO ĐĂNG KÝ CTV CHIẾT KHẤU & MUA HÀNG NHANH -->
+  <div id="quick-buy-modal" class="modal-overlay">
+    <div class="modal-card glass-card" style="max-width: 520px; width: 92%;">
+      <div class="modal-header" style="border-bottom: 1px solid var(--border-glass); padding-bottom: 12px;">
+        <div>
+          <h3 style="font-size: 18px; font-weight: 700; color: var(--accent-primary);">🛒 Mua Hàng & Đăng Ký CTV Chiết Khấu</h3>
+          <p style="font-size: 12px; color: var(--text-secondary); margin: 2px 0 0 0;">Vui lòng chọn hình thức mua hàng bên dưới</p>
+        </div>
+        <button id="close-quick-buy-modal-btn" class="btn btn-secondary btn-icon">✕</button>
+      </div>
+
+      <!-- Banner Thông báo Ưu Đãi CTV -->
+      <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15)); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 14px; margin-top: 14px;">
+        <div style="display: flex; gap: 10px; align-items: flex-start;">
+          <span style="font-size: 26px;">💼</span>
+          <div>
+            <div style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;">
+              Đăng Nhập Làm CTV Để Có Giá Chiết Khấu!
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">
+              Đăng ký tài khoản Cộng tác viên để mua hàng với <strong>giá chiết khấu ưu đãi</strong>, tích điểm thưởng xu và nhận hoa hồng trên từng đơn bán!
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+              <button id="quick-buy-login-btn" class="btn btn-primary btn-sm" style="font-size: 12px; font-weight: 600;">🔑 Đăng Nhập Ngay</button>
+              <button id="quick-buy-register-btn" class="btn btn-success btn-sm" style="font-size: 12px; font-weight: 600;">📱 Đăng Ký Làm CTV</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; margin: 18px 0 14px 0; gap: 10px;">
+        <div style="flex: 1; height: 1px; background: var(--border-glass);"></div>
+        <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">HOẶC MUA HÀNG NHANH</span>
+        <div style="flex: 1; height: 1px; background: var(--border-glass);"></div>
+      </div>
+
+      <!-- Form Mua Hàng Nhanh (Nhập SĐT) -->
+      <form id="quick-buy-form">
+        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+          <span>📞</span> Nhập Số Điện Thoại Để Quản Trị Viên Liên Hệ Tư Vấn:
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Sản Phẩm Chọn Mua</label>
+          <input type="text" id="quick-buy-product-name" class="form-control" readonly style="background: rgba(255,255,255,0.05); font-weight: 600; color: var(--accent-primary);">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Số Điện Thoại Của Bạn *</label>
+          <input type="tel" id="quick-buy-phone" class="form-control" placeholder="Ví dụ: 0987654321" required pattern="[0-9]{9,11}">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Họ và Tên Của Bạn *</label>
+          <input type="text" id="quick-buy-name" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Ghi Chú / Yêu Cầu Tư Vấn (Tùy chọn)</label>
+          <input type="text" id="quick-buy-note" class="form-control" placeholder="VD: Cần tư vấn thêm báo giá chiết khấu...">
+        </div>
+
+        <button type="submit" class="btn btn-warning" style="width: 100%; margin-top: 10px; font-weight: 700; justify-content: center; font-size: 14px;">
+          📞 Gửi SĐT Cho Quản Trị Viên Liên Hệ
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: XÁC NHẬN GIAO HÀNG THÀNH CÔNG & THANH TOÁN -->
+  <div id="deliver-confirm-modal" class="modal-overlay">
+    <div class="modal-card glass-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 style="font-size: 18px; font-weight: 700;">✅ Xác Nhận Giao Hàng & Thu Tiền</h3>
+        <button id="close-deliver-modal-btn" class="btn btn-secondary btn-icon" type="button">✕</button>
+      </div>
+      <form id="deliver-confirm-form">
+        <input type="hidden" id="deliver-order-id">
+        <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; border: 1px solid var(--border-glass);">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="color: var(--text-muted); font-size: 13px;">Mã đơn hàng:</span>
+            <span id="deliver-modal-order-id" style="font-weight: 800; color: var(--accent-primary);">ORD-XXXX</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="color: var(--text-muted); font-size: 13px;">Khách hàng:</span>
+            <span id="deliver-modal-customer" style="font-weight: 700;">-</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted); font-size: 13px;">Tổng tiền đơn hàng:</span>
+            <span id="deliver-modal-total-amount" style="font-weight: 800; color: var(--success); font-size: 16px;">0 đ</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-weight: 600;">💵 Thu Tiền Mặt (VNĐ)</label>
+          <input type="number" id="deliver-cash-input" class="form-control" placeholder="0" min="0" value="0">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-weight: 600;">💳 Thu Chuyển Khoản (VNĐ)</label>
+          <input type="number" id="deliver-transfer-input" class="form-control" placeholder="0" min="0" value="0">
+        </div>
+
+        <div style="background: rgba(239, 68, 68, 0.08); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">⚠️ Nợ lại còn thừa:</span>
+          <span id="deliver-modal-debt-calc" style="font-size: 16px; font-weight: 800; color: var(--danger);">0 đ</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">📝 Ghi Chú Thanh Toán / Giao Hàng (Tùy chọn)</label>
+          <input type="text" id="deliver-note-input" class="form-control" placeholder="VD: Khách trả tiền mặt, nợ lại hẹn cuối tuần trả...">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+          <button type="button" id="btn-cancel-deliver-modal" class="btn btn-secondary" style="justify-content: center;">Hủy Bỏ</button>
+          <button type="submit" class="btn btn-success" style="justify-content: center; font-weight: 700;">💾 Xác Nhận & Thu Tiền</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: XÁC NHẬN HỦY ĐƠN HÀNG / GIAO THẤT BẠI -->
+  <div id="cancel-confirm-modal" class="modal-overlay">
+    <div class="modal-card glass-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 style="font-size: 18px; font-weight: 700; color: var(--danger);">❌ Xác Nhận Hủy Đơn / Giao Thất Bại</h3>
+        <button id="close-cancel-modal-btn" class="btn btn-secondary btn-icon" type="button">✕</button>
+      </div>
+      <form id="cancel-confirm-form">
+        <input type="hidden" id="cancel-order-id">
+        <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; border: 1px solid var(--border-glass);">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="color: var(--text-muted); font-size: 13px;">Mã đơn hàng:</span>
+            <span id="cancel-modal-order-id" style="font-weight: 800; color: var(--danger);">ORD-XXXX</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted); font-size: 13px;">Khách hàng:</span>
+            <span id="cancel-modal-customer" style="font-weight: 700;">-</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-weight: 600;">Lý Do Giao Thất Bại / Hủy Đơn *</label>
+          <select id="cancel-reason-select" class="form-select" style="margin-bottom: 8px;">
+            <option value="Khách hàng không nghe máy / Không liên lạc được">📞 Khách hàng không nghe máy / Không liên lạc được</option>
+            <option value="Khách hàng đổi ý từ chối nhận hàng">🙅‍♂️ Khách hàng từ chối nhận hàng</option>
+            <option value="Khách hẹn lại lịch giao hàng sang ngày khác">📅 Khách hẹn lại lịch giao hàng</option>
+            <option value="Địa chỉ giao hàng không hợp lệ / Sai SĐT">📍 Địa chỉ không tìm thấy / Sai SĐT</option>
+            <option value="Hàng hóa bị lỗi / Không đúng yêu cầu khách">📦 Hàng hóa không đúng yêu cầu</option>
+            <option value="OTHER">✍️ Lý do khác...</option>
+          </select>
+          <input type="text" id="cancel-reason-custom" class="form-control" placeholder="Nhập lý do chi tiết..." style="display: none;">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+          <button type="button" id="btn-cancel-cancel-modal" class="btn btn-secondary" style="justify-content: center;">Bỏ Qua</button>
+          <button type="submit" class="btn btn-danger" style="justify-content: center; font-weight: 700;">💾 Xác Nhận Hủy Đơn</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JS Modules -->
+  <script src="js/api.js?v=20260807"></script>
+  <script src="js/store.js?v=20260807"></script>
+  <script src="js/components/priceListView.js?v=20260807"></script>
+  <script src="js/components/dashboardView.js?v=20260807"></script>
+  <script src="js/components/inventoryView.js?v=20260807"></script>
+  <script src="js/components/ctvView.js?v=20260807"></script>
+  <script src="js/components/driverView.js?v=20260807"></script>
+  <script src="js/components/userView.js?v=20260807"></script>
+  <script src="js/components/authModal.js?v=20260807"></script>
+  <script src="js/components/quickBuyModal.js?v=20260807"></script>
+  <script src="js/components/remoteConnect.js?v=20260807"></script>
+  <script src="js/app.js?v=20260807"></script>
+</body>
+</html>

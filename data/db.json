@@ -1,0 +1,696 @@
+{
+  "products": [
+    {
+      "id": "prod-1",
+      "code": "SP001",
+      "name": "Tai nghe không dây Premium Pro",
+      "category": "Điện tử",
+      "costPrice": 280000,
+      "sellingPrice": 550000,
+      "stock": 48,
+      "reserved": 0,
+      "points": 50,
+      "unit": "Cái"
+    },
+    {
+      "id": "prod-2",
+      "code": "SP002",
+      "name": "Đồng hồ thông minh FitTrack",
+      "category": "Phụ kiện",
+      "costPrice": 450000,
+      "sellingPrice": 890000,
+      "stock": 29,
+      "reserved": 0,
+      "points": 80,
+      "unit": "Cái"
+    },
+    {
+      "id": "prod-3",
+      "code": "SP003",
+      "name": "Sạc dự phòng Ultra Power 20.000mAh",
+      "category": "Điện tử",
+      "costPrice": 180000,
+      "sellingPrice": 380000,
+      "stock": 98,
+      "reserved": 0,
+      "points": 35,
+      "unit": "Cái"
+    },
+    {
+      "id": "prod-4",
+      "code": "SP004",
+      "name": "Bàn phím cơ không dây SlimRGB",
+      "category": "Máy tính",
+      "costPrice": 600000,
+      "sellingPrice": 1250000,
+      "stock": 17,
+      "reserved": 0,
+      "points": 120,
+      "unit": "Cái"
+    },
+    {
+      "id": "prod-1785857711089",
+      "code": "s-11",
+      "name": "sư",
+      "category": "Chung",
+      "costPrice": 50000,
+      "sellingPrice": 60000,
+      "stock": 100,
+      "reserved": 0,
+      "points": 1,
+      "unit": "Cái"
+    },
+    {
+      "id": "prod-1786076313275",
+      "code": "SP901",
+      "name": "CÀ PHÊ BẦU 11",
+      "category": "Chung",
+      "costPrice": 2000,
+      "sellingPrice": 4000,
+      "stock": 10000,
+      "reserved": 0,
+      "points": 1,
+      "unit": "Cái"
+    }
+  ],
+  "regions": [
+    "Hà Nội",
+    "TP. Hồ Chí Minh",
+    "Đà Nẵng",
+    "Hải Phòng",
+    "Cần Thơ"
+  ],
+  "ctvs": [
+    {
+      "id": "ctv-1",
+      "name": "Nguyễn Văn An",
+      "phone": "0901234567",
+      "region": "Hà Nội",
+      "points": 860,
+      "totalSales": 9250000,
+      "completedOrdersCount": 8
+    },
+    {
+      "id": "ctv-2",
+      "name": "Lê Thị Bích",
+      "phone": "0912345678",
+      "region": "TP. Hồ Chí Minh",
+      "points": 420,
+      "totalSales": 4800000,
+      "completedOrdersCount": 8
+    },
+    {
+      "id": "ctv-3",
+      "name": "Trần Minh Cường",
+      "phone": "0923456789",
+      "region": "Hà Nội",
+      "points": 180,
+      "totalSales": 1980000,
+      "completedOrdersCount": 3
+    },
+    {
+      "id": "ctv-4",
+      "name": "Phạm Thu Hà",
+      "phone": "0934567890",
+      "region": "Đà Nẵng",
+      "points": 310,
+      "totalSales": 3400000,
+      "completedOrdersCount": 6
+    },
+    {
+      "id": "ctv-1786014533527",
+      "name": "Nguyễn Văn Đăng Ký Test",
+      "phone": "0955745994",
+      "region": "Hà Nội",
+      "points": 0,
+      "totalSales": 0,
+      "completedOrdersCount": 0
+    },
+    {
+      "id": "ctv-1786014559882",
+      "name": "Nguyễn Văn Đăng Ký Test",
+      "phone": "0953819540",
+      "region": "Hà Nội",
+      "points": 0,
+      "totalSales": 0,
+      "completedOrdersCount": 0
+    },
+    {
+      "id": "ctv-1786015232738",
+      "name": "Nguyễn Văn Đăng Ký Test",
+      "phone": "0950185485",
+      "region": "Hà Nội",
+      "points": 0,
+      "totalSales": 0,
+      "completedOrdersCount": 0
+    },
+    {
+      "id": "ctv-1786015814037",
+      "name": "Nguyễn Thanh Hoà",
+      "phone": "0979366316",
+      "region": "Hà Nội",
+      "points": 0,
+      "totalSales": 0,
+      "completedOrdersCount": 0
+    },
+    {
+      "id": "usr-1786019395827",
+      "name": "Test User",
+      "phone": "0911111222",
+      "region": "TP. Hồ Chí Minh",
+      "points": 0,
+      "totalSales": 0,
+      "completedOrdersCount": 0
+    }
+  ],
+  "drivers": [
+    {
+      "id": "drv-1",
+      "name": "Hoàng Văn Tuấn",
+      "phone": "0988111222",
+      "vehicle": "Xe máy (29F1-123.45)"
+    },
+    {
+      "id": "drv-2",
+      "name": "Nguyễn Tiến Đạt",
+      "phone": "0988333444",
+      "vehicle": "Xe bán tải (51D-987.65)"
+    }
+  ],
+  "orders": [
+    {
+      "id": "ORD-1001",
+      "ctvId": "ctv-1",
+      "ctvName": "Nguyễn Văn An",
+      "ctvRegion": "Hà Nội",
+      "driverId": "drv-1",
+      "driverName": "Hoàng Văn Tuấn",
+      "customerName": "Đặng Thị Mai",
+      "customerPhone": "0977123456",
+      "address": "123 Đường Xuân Thủy, Cầu Giấy, Hà Nội",
+      "items": [
+        {
+          "productId": "prod-1",
+          "productName": "Tai nghe không dây Premium Pro",
+          "qty": 1,
+          "costPrice": 280000,
+          "sellingPrice": 550000,
+          "pointsPerUnit": 50
+        }
+      ],
+      "totalAmount": 550000,
+      "totalCost": 280000,
+      "profit": 270000,
+      "earnedPoints": 50,
+      "status": "DELIVERED",
+      "createdAt": "2026-08-02T15:31:12.913Z",
+      "deliveredAt": "2026-08-03T15:31:12.915Z"
+    },
+    {
+      "id": "ORD-5057",
+      "ctvId": "ctv-1786015814037",
+      "ctvName": "Nguyễn Thanh Hoà",
+      "ctvRegion": "Hà Nội",
+      "driverId": "drv-1",
+      "driverName": "Hoàng Văn Tuấn",
+      "customerName": "ds",
+      "customerPhone": "323",
+      "address": "dsd",
+      "items": [
+        {
+          "productId": "prod-2",
+          "productName": "Đồng hồ thông minh FitTrack",
+          "qty": 1,
+          "costPrice": 450000,
+          "sellingPrice": 890000,
+          "pointsPerUnit": 80
+        }
+      ],
+      "totalAmount": 890000,
+      "totalCost": 450000,
+      "profit": 440000,
+      "earnedPoints": 80,
+      "approvalStatus": "REJECTED",
+      "estimatedDeliveryTime": "23:01 ngày 06/08/2026",
+      "status": "CANCELLED",
+      "createdAt": "2026-08-06T11:46:00.569Z",
+      "approvedAt": "2026-08-06T13:10:15.968Z",
+      "cancelReason": "Khách hàng không nghe máy / Hủy đơn",
+      "cancelledAt": "2026-08-06T13:10:42.109Z"
+    },
+    {
+      "id": "ORD-4983",
+      "ctvId": "ctv-1",
+      "ctvName": "Nguyễn Văn An",
+      "ctvRegion": "Hà Nội",
+      "driverId": "drv-2",
+      "driverName": "Nguyễn Tiến Đạt",
+      "customerName": "sds",
+      "customerPhone": "13232",
+      "address": "2ds",
+      "items": [
+        {
+          "productId": "prod-4",
+          "productName": "Bàn phím cơ không dây SlimRGB",
+          "qty": 1,
+          "costPrice": 600000,
+          "sellingPrice": 1250000,
+          "pointsPerUnit": 120
+        },
+        {
+          "productId": "prod-1",
+          "productName": "Tai nghe không dây Premium Pro",
+          "qty": 1,
+          "costPrice": 280000,
+          "sellingPrice": 550000,
+          "pointsPerUnit": 50
+        },
+        {
+          "productId": "prod-4",
+          "productName": "Bàn phím cơ không dây SlimRGB",
+          "qty": 1,
+          "costPrice": 600000,
+          "sellingPrice": 1250000,
+          "pointsPerUnit": 120
+        },
+        {
+          "productId": "prod-3",
+          "productName": "Sạc dự phòng Ultra Power 20.000mAh",
+          "qty": 1,
+          "costPrice": 180000,
+          "sellingPrice": 380000,
+          "pointsPerUnit": 35
+        }
+      ],
+      "totalAmount": 3430000,
+      "totalCost": 1660000,
+      "profit": 1770000,
+      "earnedPoints": 325,
+      "approvalStatus": "APPROVED",
+      "estimatedDeliveryTime": "08/107",
+      "status": "DELIVERED",
+      "createdAt": "2026-08-06T13:21:15.908Z",
+      "approvedAt": "2026-08-06T13:26:45.328Z",
+      "deliveredAt": "2026-08-06T13:27:52.815Z"
+    },
+    {
+      "id": "ORD-4137",
+      "ctvId": "ctv-1",
+      "ctvName": "Nguyễn Văn An",
+      "ctvRegion": "Hà Nội",
+      "driverId": "drv-1",
+      "driverName": "Hoàng Văn Tuấn",
+      "customerName": "sdsđấ",
+      "customerPhone": "1321313",
+      "address": "ssssssssss",
+      "items": [
+        {
+          "productId": "prod-1",
+          "productName": "Tai nghe không dây Premium Pro",
+          "qty": 1,
+          "costPrice": 280000,
+          "sellingPrice": 550000,
+          "pointsPerUnit": 50
+        }
+      ],
+      "totalAmount": 550000,
+      "totalCost": 280000,
+      "profit": 270000,
+      "earnedPoints": 50,
+      "approvalStatus": "APPROVED",
+      "estimatedDeliveryTime": "222",
+      "status": "DELIVERED",
+      "createdAt": "2026-08-06T13:59:27.503Z",
+      "approvedAt": "2026-08-06T14:00:15.135Z",
+      "deliveredAt": "2026-08-06T14:08:11.921Z"
+    },
+    {
+      "id": "ORD-8582",
+      "ctvId": "ctv-1",
+      "ctvName": "Nguyễn Văn An",
+      "ctvRegion": "Hà Nội",
+      "driverId": null,
+      "driverName": "Chưa phân công",
+      "customerName": "Anh A",
+      "customerPhone": "3232323",
+      "address": "Gia Lai",
+      "items": [
+        {
+          "productId": "prod-2",
+          "productName": "Đồng hồ thông minh FitTrack",
+          "qty": 1,
+          "costPrice": 450000,
+          "sellingPrice": 890000,
+          "pointsPerUnit": 80
+        },
+        {
+          "productId": "prod-3",
+          "productName": "Sạc dự phòng Ultra Power 20.000mAh",
+          "qty": 1,
+          "costPrice": 180000,
+          "sellingPrice": 380000,
+          "pointsPerUnit": 35
+        },
+        {
+          "productId": "prod-4",
+          "productName": "Bàn phím cơ không dây SlimRGB",
+          "qty": 1,
+          "costPrice": 600000,
+          "sellingPrice": 1250000,
+          "pointsPerUnit": 120
+        }
+      ],
+      "totalAmount": 2520000,
+      "totalCost": 1230000,
+      "profit": 1290000,
+      "earnedPoints": 235,
+      "approvalStatus": "PENDING",
+      "estimatedDeliveryTime": "",
+      "status": "DELIVERED",
+      "createdAt": "2026-08-06T14:10:35.228Z",
+      "cashAmount": 1520000,
+      "transferAmount": 1000000,
+      "debtAmount": 0,
+      "paymentNote": "",
+      "deliveredAt": "2026-08-07T03:34:42.371Z"
+    }
+  ],
+  "stockTransactions": [
+    {
+      "id": "tx-101",
+      "type": "IMPORT",
+      "productId": "prod-1",
+      "productName": "Tai nghe không dây Premium Pro",
+      "qty": 51,
+      "note": "Khởi tạo tồn kho ban đầu",
+      "createdAt": "2026-08-01T15:31:12.915Z"
+    },
+    {
+      "id": "tx-102",
+      "type": "DEDUCT",
+      "productId": "prod-1",
+      "productName": "Tai nghe không dây Premium Pro",
+      "qty": 1,
+      "note": "Giao thành công đơn ORD-1001",
+      "createdAt": "2026-08-03T15:31:12.915Z"
+    },
+    {
+      "id": "tx-1785857711089",
+      "type": "IMPORT",
+      "productId": "prod-1785857711089",
+      "productName": "sư",
+      "qty": 100,
+      "note": "Khởi tạo sản phẩm mới",
+      "createdAt": "2026-08-04T15:35:11.089Z"
+    },
+    {
+      "id": "tx-1786016760569-yjk",
+      "type": "RESERVE",
+      "productId": "prod-2",
+      "productName": "Đồng hồ thông minh FitTrack",
+      "qty": 1,
+      "note": "Tạm giữ kho cho đơn hàng mới của CTV Nguyễn Thanh Hoà",
+      "createdAt": "2026-08-06T11:46:00.569Z"
+    },
+    {
+      "id": "tx-1786021842109-o5t",
+      "type": "UNRESERVE",
+      "productId": "prod-2",
+      "productName": "Đồng hồ thông minh FitTrack",
+      "qty": 1,
+      "note": "Giải phóng giữ kho do hủy/giao thất bại đơn ORD-5057",
+      "createdAt": "2026-08-06T13:10:42.109Z"
+    },
+    {
+      "id": "tx-1786022475908-0fo",
+      "type": "RESERVE",
+      "productId": "prod-4",
+      "productName": "Bàn phím cơ không dây SlimRGB",
+      "qty": 1,
+      "note": "Tạm giữ kho cho đơn hàng mới của CTV Nguyễn Văn An",
+      "createdAt": "2026-08-06T13:21:15.908Z"
+    },
+    {
+      "id": "tx-1786022475908-rcq",
+      "type": "RESERVE",
+      "productId": "prod-1",
+      "productName": "Tai nghe không dây Premium Pro",
+      "qty": 1,
+      "note": "Tạm giữ kho cho đơn hàng mới của CTV Nguyễn Văn An",
+      "createdAt": "2026-08-06T13:21:15.908Z"
+    },
+    {
+      "id": "tx-1786022475908-f60",
+      "type": "RESERVE",
+      "productId": "prod-4",
+      "productName": "Bàn phím cơ không dây SlimRGB",
+      "qty": 1,
+      "note": "Tạm giữ kho cho đơn hàng mới của CTV Nguyễn Văn An",
+      "createdAt": "2026-08-06T13:21:15.908Z"
+    },
+    {
+      "id": "tx-1786022475908-vgg",
+      "type": "RESERVE",
+      "productId": "prod-3",
+      "productName": "Sạc dự phòng Ultra Power 20.000mAh",
+      "qty": 1,
+      "note": "Tạm giữ kho cho đơn hàng mới của CTV Nguyễn Văn An",
+      "createdAt": "2026-08-06T13:21:15.908Z"
+    },
+    {
+      "id": "tx-1786022872815-kw9",
+      "type": "DEDUCT",
+      "productId": "prod-4",
+      "productName": "Bàn phím cơ không dây SlimRGB",
+      "qty": 1,
+      "note": "Chính thức trừ kho giao thành công đơn ORD-4983",
+      "createdAt": "2026-08-06T13:27:52.815Z"
+    },
+    {
+      "id": "tx-1786022872815-2v3",
+      "type": "DEDUCT",
+      "productId": "prod-1",
+      "productName": "Tai nghe không dây Premium Pro",
+      "qty": 1,
+      "note": "Chính thức trừ kho giao thành công đơn ORD-4983",
+      "createdAt": "2026-08-06T13:27:52.815Z"
+    },
+    {
+      "id": "tx-1786022872815-czz",
+      "type": "DEDUCT",
+      "productId": "prod-4",
+      "productName": "Bàn phím cơ không dây SlimRGB",
+      "qty": 1,
+      "note": "Chính thức trừ kho giao thành công đơn ORD-4983",
+      "createdAt": "2026-08-06T13:27:52.815Z"
+    },
+    {
+      "id": "tx-1786022872815-bov",
+      "type": "DEDUCT",
+      "productId": "prod-3",
+      "productName": "Sạc dự phòng Ultra Power 20.000mAh",
+      "qty": 1,
+      "note": "Chính thức trừ kho giao thành công đơn ORD-4983",
+      "createdAt": "2026-08-06T13:27:52.815Z"
+    },
+    {
+      "id": "tx-1786024767503-20h",
+      "type": "RESERVE",
+      "productId": "prod-1",
+      "productName": "Tai nghe không dây Premium Pro",
+      "qty": 1,
+      "note": "Tạm giữ kho cho đơn hàng mới của CTV Nguyễn Văn An",
+      "createdAt": "2026-08-06T13:59:27.503Z"
+    },
+    {
+      "id": "tx-1786025291921-kb9",
+      "type": "DEDUCT",
+      "productId": "prod-1",
+      "productName": "Tai nghe không dây Premium Pro",
+      "qty": 1,
+      "note": "Chính thức trừ kho giao thành công đơn ORD-4137",
+      "createdAt": "2026-08-06T14:08:11.921Z"
+    },
+    {
+      "id": "tx-1786025435228-0vp",
+      "type": "RESERVE",
+      "productId": "prod-2",
+      "productName": "Đồng hồ thông minh FitTrack",
+      "qty": 1,
+      "note": "Tạm giữ kho cho đơn hàng mới của CTV Nguyễn Văn An",
+      "createdAt": "2026-08-06T14:10:35.228Z"
+    },
+    {
+      "id": "tx-1786025435228-p9e",
+      "type": "RESERVE",
+      "productId": "prod-3",
+      "productName": "Sạc dự phòng Ultra Power 20.000mAh",
+      "qty": 1,
+      "note": "Tạm giữ kho cho đơn hàng mới của CTV Nguyễn Văn An",
+      "createdAt": "2026-08-06T14:10:35.228Z"
+    },
+    {
+      "id": "tx-1786025435228-iuh",
+      "type": "RESERVE",
+      "productId": "prod-4",
+      "productName": "Bàn phím cơ không dây SlimRGB",
+      "qty": 1,
+      "note": "Tạm giữ kho cho đơn hàng mới của CTV Nguyễn Văn An",
+      "createdAt": "2026-08-06T14:10:35.228Z"
+    },
+    {
+      "id": "tx-1786073682371-2qf",
+      "type": "DEDUCT",
+      "productId": "prod-2",
+      "productName": "Đồng hồ thông minh FitTrack",
+      "qty": 1,
+      "note": "Chính thức trừ kho giao thành công đơn ORD-8582",
+      "createdAt": "2026-08-07T03:34:42.371Z"
+    },
+    {
+      "id": "tx-1786073682371-pma",
+      "type": "DEDUCT",
+      "productId": "prod-3",
+      "productName": "Sạc dự phòng Ultra Power 20.000mAh",
+      "qty": 1,
+      "note": "Chính thức trừ kho giao thành công đơn ORD-8582",
+      "createdAt": "2026-08-07T03:34:42.371Z"
+    },
+    {
+      "id": "tx-1786073682371-2jt",
+      "type": "DEDUCT",
+      "productId": "prod-4",
+      "productName": "Bàn phím cơ không dây SlimRGB",
+      "qty": 1,
+      "note": "Chính thức trừ kho giao thành công đơn ORD-8582",
+      "createdAt": "2026-08-07T03:34:42.371Z"
+    },
+    {
+      "id": "tx-1786076313275",
+      "type": "IMPORT",
+      "productId": "prod-1786076313275",
+      "productName": "CÀ PHÊ BẦU 11",
+      "qty": 10000,
+      "note": "Khởi tạo sản phẩm mới",
+      "createdAt": "2026-08-07T04:18:33.275Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "ctv-1786014533527",
+      "phone": "0955745994",
+      "password": "pass12345",
+      "name": "Nguyễn Văn Đăng Ký Test",
+      "role": "CTV",
+      "region": "Hà Nội",
+      "createdAt": "2026-08-06T11:08:53.527Z"
+    },
+    {
+      "id": "ctv-1786014559882",
+      "phone": "0953819540",
+      "password": "pass12345",
+      "name": "Nguyễn Văn Đăng Ký Test",
+      "role": "CTV",
+      "region": "Hà Nội",
+      "createdAt": "2026-08-06T11:09:19.882Z"
+    },
+    {
+      "id": "ctv-1786015232738",
+      "phone": "0950185485",
+      "password": "pass12345",
+      "name": "Nguyễn Văn Đăng Ký Test",
+      "role": "CTV",
+      "region": "Hà Nội",
+      "createdAt": "2026-08-06T11:20:32.738Z"
+    },
+    {
+      "id": "ctv-1786015814037",
+      "phone": "0979366316",
+      "password": "TH2532621991",
+      "name": "Nguyễn Thanh Hoà",
+      "role": "ADMIN",
+      "region": "Hà Nội",
+      "createdAt": "2026-08-06T11:30:14.037Z",
+      "ctvRequest": "NONE"
+    },
+    {
+      "id": "usr-1",
+      "phone": "0901234567",
+      "password": "123456",
+      "name": "Nguyễn Văn An",
+      "role": "CTV",
+      "region": "Hà Nội",
+      "createdAt": "2026-08-06T11:48:50.820Z"
+    },
+    {
+      "id": "usr-2",
+      "phone": "0912345678",
+      "password": "123456",
+      "name": "Lê Thị Bích",
+      "role": "CTV",
+      "region": "TP. Hồ Chí Minh",
+      "createdAt": "2026-08-06T11:48:50.821Z"
+    },
+    {
+      "id": "usr-3",
+      "phone": "0923456789",
+      "password": "123456",
+      "name": "Trần Minh Cường",
+      "role": "CTV",
+      "region": "Hà Nội",
+      "createdAt": "2026-08-06T11:48:50.821Z"
+    },
+    {
+      "id": "usr-4",
+      "phone": "0934567890",
+      "password": "123456",
+      "name": "Phạm Thu Hà",
+      "role": "CTV",
+      "region": "Đà Nẵng",
+      "createdAt": "2026-08-06T11:48:50.821Z"
+    },
+    {
+      "id": "usr-drv1",
+      "phone": "0988111222",
+      "password": "123456",
+      "name": "Hoàng Văn Tuấn",
+      "role": "DRIVER",
+      "region": "Hà Nội",
+      "createdAt": "2026-08-06T11:48:50.821Z"
+    },
+    {
+      "id": "usr-drv2",
+      "phone": "0988333444",
+      "password": "123456",
+      "name": "Nguyễn Tiến Đạt",
+      "role": "DRIVER",
+      "region": "TP. Hồ Chí Minh",
+      "createdAt": "2026-08-06T11:48:50.821Z"
+    },
+    {
+      "id": "usr-1786019395827",
+      "phone": "0911111222",
+      "password": "password123",
+      "name": "Test User",
+      "role": "CTV",
+      "region": "TP. Hồ Chí Minh",
+      "ctvRequest": "APPROVED",
+      "createdAt": "2026-08-06T12:29:55.828Z"
+    },
+    {
+      "id": "usr-admin",
+      "phone": "0999999999",
+      "password": "admin123",
+      "name": "Quản Trị Viên",
+      "role": "ADMIN",
+      "region": "Hà Nội",
+      "createdAt": "2026-08-06T13:07:35.837Z"
+    }
+  ],
+  "quickPurchases": [],
+  "commissionSettings": {
+    "topRate": 15,
+    "standardRate": 8,
+    "topBonusPointsMultiplier": 1.5
+  }
+}

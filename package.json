@@ -1,0 +1,27 @@
+{
+  "name": "sales-inventory-app",
+  "version": "1.0.0",
+  "description": "Ứng dụng Quản lý Bán hàng & Tồn kho truy cập từ xa (Windows & Mobile)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test:db": "node scripts/test-db.js",
+    "sync:vps": "scripts\\sync-to-vps.bat"
+  },
+  "keywords": [
+    "inventory",
+    "sales",
+    "ctv",
+    "affiliate",
+    "remote-access"
+  ],
+  "author": "Antigravity",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.22.2",
+    "mysql2": "^3.23.2",
+    "qrcode": "^1.5.4"
+  }
+}
