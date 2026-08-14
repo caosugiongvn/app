@@ -23,15 +23,21 @@ class ProductModel {
   /**
    * Thêm sản phẩm mới
    */
-  static async createProduct({ code, name, category, costPrice, sellingPrice, stock, points, unit }) {
+  static async createProduct({ code, name, category, costPrice, originalPrice, promoPrice, sellingPrice, stock, points, unit }) {
     const data = dbJSON.readData();
+    const orig = Number(originalPrice || sellingPrice) || 0;
+    const promo = Number(promoPrice) || 0;
+    const effSelling = promo > 0 ? promo : (Number(sellingPrice) || orig);
+
     const newProduct = {
       id: `prod-${Date.now()}`,
       code: code || `SP${Math.floor(100 + Math.random() * 900)}`,
       name,
       category: category || 'Chung',
       costPrice: Number(costPrice) || 0,
-      sellingPrice: Number(sellingPrice) || 0,
+      originalPrice: orig,
+      promoPrice: promo,
+      sellingPrice: effSelling,
       stock: Number(stock) || 0,
       reserved: 0,
       points: Number(points) || 0,
@@ -75,12 +81,21 @@ class ProductModel {
     }
 
     const product = data.products[productIndex];
-    const { name, category, costPrice, sellingPrice, stock, points, unit } = updateData;
+    const { code, name, category, costPrice, originalPrice, promoPrice, sellingPrice, stock, points, unit } = updateData;
 
-    if (name !== undefined && name.trim() !== '') product.name = name.trim();
+    if (code !== undefined && String(code).trim() !== '') product.code = String(code).trim();
+    if (name !== undefined && String(name).trim() !== '') product.name = String(name).trim();
     if (category !== undefined) product.category = category;
     if (costPrice !== undefined && !isNaN(Number(costPrice))) product.costPrice = Number(costPrice);
-    if (sellingPrice !== undefined && !isNaN(Number(sellingPrice))) product.sellingPrice = Number(sellingPrice);
+    if (originalPrice !== undefined && !isNaN(Number(originalPrice))) product.originalPrice = Number(originalPrice);
+    if (promoPrice !== undefined && !isNaN(Number(promoPrice))) product.promoPrice = Number(promoPrice);
+    
+    if (promoPrice !== undefined || originalPrice !== undefined || sellingPrice !== undefined) {
+      const p = Number(product.promoPrice || 0);
+      const o = Number(product.originalPrice || product.sellingPrice || 0);
+      product.sellingPrice = p > 0 ? p : (o > 0 ? o : Number(sellingPrice || product.sellingPrice || 0));
+    }
+
     if (points !== undefined && !isNaN(Number(points))) product.points = Number(points);
     if (unit !== undefined) product.unit = unit;
 
@@ -105,7 +120,7 @@ class ProductModel {
     dbJSON.saveData(data);
     return {
       ...product,
-      available: product.stock - product.reserved
+      available: product.stock - (product.reserved || 0)
     };
   }
 

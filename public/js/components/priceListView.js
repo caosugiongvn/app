@@ -233,11 +233,20 @@ class PriceListView {
               </div>
             ` : `
               <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px;">
-                ${filteredProds.map(p => `
-                  <div class="glass-card" style="padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                ${filteredProds.map(p => {
+                  const orig = p.originalPrice || p.sellingPrice || 0;
+                  const promo = p.promoPrice || 0;
+                  const effSelling = p.sellingPrice || (promo > 0 ? promo : orig);
+                  const hasPromo = promo > 0 && promo < orig;
+
+                  return `
+                  <div class="glass-card" style="padding: 14px; display: flex; flex-direction: column; justify-content: space-between; border: ${hasPromo ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--border-glass)'}; position: relative;">
                     <div>
-                      <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px;">
-                        <span class="badge badge-secondary">${p.code || 'SP'}</span>
+                      <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; align-items: center;">
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                          <span class="badge badge-secondary">${p.code || 'SP'}</span>
+                          ${hasPromo ? '<span class="badge badge-danger" style="font-size: 10px; font-weight: 800; padding: 2px 6px;">🔥 KM</span>' : ''}
+                        </div>
                         <span class="badge badge-success">+${p.points || 0} pts</span>
                       </div>
                       <div style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin-bottom: 4px; line-height: 1.3;">
@@ -246,13 +255,20 @@ class PriceListView {
                       <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
                         Danh mục: ${p.category || 'Chung'}
                       </div>
-                      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px;">
-                        <span style="font-size: 16px; font-weight: 800; color: var(--accent-primary);">
-                          ${(p.sellingPrice || 0).toLocaleString()} đ
-                        </span>
-                        <span style="font-size: 11px; color: var(--text-secondary);">
-                          Tồn kho: ${p.available !== undefined ? p.available : p.stock} ${p.unit || 'cái'}
-                        </span>
+                      <div style="margin-bottom: 10px;">
+                        <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
+                          <span style="font-size: 17px; font-weight: 800; color: ${hasPromo ? 'var(--success)' : 'var(--accent-primary)'};">
+                            ${effSelling.toLocaleString()} đ
+                          </span>
+                          ${hasPromo ? `
+                            <span style="font-size: 12px; text-decoration: line-through; color: var(--text-muted);">
+                              ${orig.toLocaleString()} đ
+                            </span>
+                          ` : ''}
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                          Tồn kho: ${p.available !== undefined ? p.available : p.stock} ${p.unit || 'Cái'}
+                        </div>
                       </div>
                     </div>
 
@@ -260,7 +276,7 @@ class PriceListView {
                       🛒 Mua Hàng / Yêu Cầu Tư Vấn
                     </button>
                   </div>
-                `).join('')}
+                `;}).join('')}
               </div>
             `}
           </div>

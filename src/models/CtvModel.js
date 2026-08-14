@@ -97,7 +97,7 @@ class CtvModel {
 
     let list = [...(data.ctvs || [])];
 
-    if (regionFilter && regionFilter.trim() !== '') {
+    if (regionFilter && regionFilter !== 'ALL' && regionFilter !== 'Tất cả khu vực' && regionFilter.trim() !== '') {
       list = list.filter(c => c.region === regionFilter);
     }
 

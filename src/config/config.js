@@ -21,6 +21,11 @@ const config = {
   // Secret Token dùng để bảo mật API đồng bộ code (Sync API)
   SYNC_SECRET_TOKEN: process.env.SYNC_SECRET_TOKEN || 'vps_sync_secret_key_2026',
 
+  // Cấu hình Facebook Messenger Page Bot
+  FB_VERIFY_TOKEN: process.env.FB_VERIFY_TOKEN || 'smart_inventory_messenger_verify_token_2026',
+  FB_PAGE_ACCESS_TOKEN: process.env.FB_PAGE_ACCESS_TOKEN || '',
+  FB_APP_SECRET: process.env.FB_APP_SECRET || '',
+
   // Tệp lưu trữ JSON Database Fallback
   DATA_DIR: path.join(__dirname, '../../data'),
   DB_FILE: path.join(__dirname, '../../data/db.json'),

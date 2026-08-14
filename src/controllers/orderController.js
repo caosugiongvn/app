@@ -97,17 +97,14 @@ class OrderController {
   static async approveOrder(req, res) {
     try {
       const { id } = req.params;
-      const { approvalStatus } = req.body;
+      const { approvalStatus, status } = req.body || {};
+      const newApprovalStatus = approvalStatus || status || 'APPROVED';
 
-      if (!approvalStatus) {
-        return res.status(400).json({ success: false, message: 'Vui lòng cung cấp trạng thái xét duyệt' });
-      }
-
-      const updatedOrder = await OrderModel.approveOrder(id, approvalStatus);
+      const updatedOrder = await OrderModel.approveOrder(id, newApprovalStatus);
 
       return res.json({
         success: true,
-        message: `Đã cập nhật trạng thái duyệt đơn: ${approvalStatus}`,
+        message: `Đã duyệt đơn hàng thành công (${newApprovalStatus})!`,
         data: updatedOrder
       });
     } catch (error) {
@@ -117,12 +114,55 @@ class OrderController {
   }
 
   /**
+   * Hoàn tất giao hàng
+   */
+  static async deliverOrder(req, res) {
+    try {
+      const { id } = req.params;
+      const { cashAmount, transferAmount, debtAmount, paymentNote } = req.body || {};
+
+      const updatedOrder = await OrderModel.updateOrderStatus(id, 'COMPLETED');
+      if (cashAmount || transferAmount || debtAmount) {
+        await OrderModel.updatePayment(id, { cashAmount, transferAmount, debtAmount, paymentNote });
+      }
+
+      return res.json({
+        success: true,
+        message: 'Đã hoàn tất giao đơn hàng thành công!',
+        data: updatedOrder
+      });
+    } catch (error) {
+      console.error('❌ Lỗi Controller deliverOrder:', error);
+      return res.status(400).json({ success: false, message: error.message || 'Lỗi hoàn tất đơn hàng' });
+    }
+  }
+
+  /**
+   * Hủy đơn hàng
+   */
+  static async cancelOrder(req, res) {
+    try {
+      const { id } = req.params;
+      const updatedOrder = await OrderModel.updateOrderStatus(id, 'CANCELLED');
+
+      return res.json({
+        success: true,
+        message: 'Đã hủy đơn hàng thành công',
+        data: updatedOrder
+      });
+    } catch (error) {
+      console.error('❌ Lỗi Controller cancelOrder:', error);
+      return res.status(400).json({ success: false, message: error.message || 'Lỗi hủy đơn hàng' });
+    }
+  }
+
+  /**
    * Cập nhật thanh toán
    */
   static async updatePayment(req, res) {
     try {
       const { id } = req.params;
-      const { cashAmount, transferAmount, debtAmount, paymentNote } = req.body;
+      const { cashAmount, transferAmount, debtAmount, paymentNote } = req.body || {};
 
       const updatedOrder = await OrderModel.updatePayment(id, { cashAmount, transferAmount, debtAmount, paymentNote });
 

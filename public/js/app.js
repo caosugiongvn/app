@@ -1,6 +1,7 @@
 // Wait for DOM content to load
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
+    initGlobalSyncVps();
     initGreeting();
     initNamePersonalization();
     initCounterAndCelebrate();
@@ -27,6 +28,30 @@ function initTheme() {
             const icon = themeToggleBtn.querySelector('.theme-icon');
             if (icon) icon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
             showToast(newTheme === 'dark' ? '🌙 Đã chuyển sang Dark Mode' : '☀️ Đã chuyển sang Light Mode');
+        });
+    }
+}
+
+function initGlobalSyncVps() {
+    const globalSyncBtn = document.getElementById('btn-sync-vps-global');
+    if (globalSyncBtn) {
+        globalSyncBtn.addEventListener('click', async () => {
+            if (!confirm('Bạn có chắc chắn muốn kích hoạt Đồng bộ & Cập nhật Code từ Git Repository lên VPS Linux không?')) return;
+            globalSyncBtn.disabled = true;
+            globalSyncBtn.innerHTML = '<span>⏳ Đang kéo code VPS...</span>';
+            try {
+                const res = await window.API.syncCode();
+                if (res.success) {
+                    alert('🎉 ' + res.message + '\n\n' + (res.logs ? res.logs.join('\n') : ''));
+                } else {
+                    alert('❌ Lỗi đồng bộ: ' + (res.message || 'Không thể đồng bộ code'));
+                }
+            } catch (e) {
+                alert('❌ Lỗi kết nối khi đồng bộ: ' + e.message);
+            } finally {
+                globalSyncBtn.disabled = false;
+                globalSyncBtn.innerHTML = '<span>🔄 Đồng bộ VPS</span>';
+            }
         });
     }
 }
@@ -272,6 +297,7 @@ function initAppViews() {
     if (window.CTVView && typeof window.CTVView.init === 'function') window.CTVView.init();
     if (window.DriverView && typeof window.DriverView.init === 'function') window.DriverView.init();
     if (window.RemoteConnect && typeof window.RemoteConnect.init === 'function') window.RemoteConnect.init();
+    if (window.MessengerView && typeof window.MessengerView.init === 'function') window.MessengerView.init();
 
     const roleBtns = document.querySelectorAll('.role-btn');
     const tabViews = document.querySelectorAll('.tab-view');
@@ -297,6 +323,8 @@ function initAppViews() {
                 window.priceListView.render();
             } else if (tabName === 'users' && window.userView) {
                 window.userView.render();
+            } else if (tabName === 'messenger' && window.MessengerView) {
+                window.MessengerView.loadSettings();
             }
         });
     });

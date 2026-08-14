@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS `products` (
   `name` VARCHAR(255) NOT NULL,
   `category` VARCHAR(100) DEFAULT 'Chung',
   `cost_price` DECIMAL(15, 2) NOT NULL DEFAULT 0,
+  `original_price` DECIMAL(15, 2) NOT NULL DEFAULT 0,
+  `promo_price` DECIMAL(15, 2) NOT NULL DEFAULT 0,
   `selling_price` DECIMAL(15, 2) NOT NULL DEFAULT 0,
   `stock` INT NOT NULL DEFAULT 0,
   `reserved` INT NOT NULL DEFAULT 0,

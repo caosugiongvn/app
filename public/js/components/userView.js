@@ -167,13 +167,16 @@ class UserView {
       return;
     }
 
-    // Filter controls UI
+    // Filter controls UI & Sync VPS Toolbar
     let filterHtml = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
         <div style="font-size: 14px; font-weight: 600; color: var(--text-primary);">
           👥 Tổng số tài khoản: <span style="color: var(--accent-primary); font-weight: 700;">${users.length}</span>
         </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <button id="btn-sync-vps-code" class="btn btn-warning" style="font-size: 13px; font-weight: 600; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border: none; border-radius: 6px; cursor: pointer;">
+            🔄 Đồng bộ & Cập nhật Code VPS
+          </button>
           <label style="font-size: 13px; color: var(--text-secondary);">📍 Sắp xếp / Lọc khu vực:</label>
           <select id="user-region-filter-select" class="form-select" style="width: auto; font-size: 13px;">
             <option value="ALL">🌐 Tất cả khu vực</option>
@@ -269,6 +272,30 @@ class UserView {
       filterSelect.addEventListener('change', (e) => {
         this.selectedRegionFilter = e.target.value;
         this.render();
+      });
+    }
+
+    const syncBtn = document.getElementById('btn-sync-vps-code');
+    if (syncBtn) {
+      syncBtn.addEventListener('click', async () => {
+        if (!confirm('Bạn có chắc chắn muốn kích hoạt Đồng bộ & Cập nhật Code từ Git Repository lên VPS Linux không?')) {
+          return;
+        }
+        syncBtn.disabled = true;
+        syncBtn.innerHTML = '⏳ Đang kéo code VPS...';
+        try {
+          const res = await window.API.syncCode();
+          if (res.success) {
+            alert('🎉 ' + res.message + '\n\n' + (res.logs ? res.logs.join('\n') : ''));
+          } else {
+            alert('❌ Lỗi đồng bộ: ' + (res.message || 'Không thể đồng bộ code'));
+          }
+        } catch (e) {
+          alert('❌ Lỗi kết nối khi đồng bộ: ' + e.message);
+        } finally {
+          syncBtn.disabled = false;
+          syncBtn.innerHTML = '🔄 Đồng bộ & Cập nhật Code VPS';
+        }
       });
     }
 

@@ -111,6 +111,12 @@ class MySQLDatabaseEngine {
         try {
           await this.pool.query(`ALTER TABLE orders ADD COLUMN payment_note TEXT;`);
         } catch (e) {}
+        try {
+          await this.pool.query(`ALTER TABLE products ADD COLUMN original_price DECIMAL(15, 2) NOT NULL DEFAULT 0;`);
+        } catch (e) {}
+        try {
+          await this.pool.query(`ALTER TABLE products ADD COLUMN promo_price DECIMAL(15, 2) NOT NULL DEFAULT 0;`);
+        } catch (e) {}
 
         // Auto-seed & ensure Super Admin (Nguyễn Thanh Hoà - 0979366316) is ADMIN
         try {
@@ -266,19 +272,26 @@ class MySQLDatabaseEngine {
   async getProducts() {
     await this.initDatabase();
     const [rows] = await this.pool.query('SELECT *, (stock - reserved) AS available FROM products ORDER BY created_at DESC');
-    return rows.map(r => ({
-      id: r.id,
-      code: r.code,
-      name: r.name,
-      category: r.category,
-      costPrice: parseFloat(r.cost_price),
-      sellingPrice: parseFloat(r.selling_price),
-      stock: parseInt(r.stock),
-      reserved: parseInt(r.reserved),
-      available: parseInt(r.available),
-      points: parseInt(r.points),
-      unit: r.unit
-    }));
+    return rows.map(r => {
+      const orig = parseFloat(r.original_price || 0) || parseFloat(r.selling_price || 0);
+      const promo = parseFloat(r.promo_price || 0);
+      const effSelling = promo > 0 ? promo : (parseFloat(r.selling_price || 0) || orig);
+      return {
+        id: r.id,
+        code: r.code,
+        name: r.name,
+        category: r.category,
+        costPrice: parseFloat(r.cost_price || 0),
+        originalPrice: orig,
+        promoPrice: promo,
+        sellingPrice: effSelling,
+        stock: parseInt(r.stock || 0),
+        reserved: parseInt(r.reserved || 0),
+        available: parseInt(r.available || 0),
+        points: parseInt(r.points || 0),
+        unit: r.unit || 'Cái'
+      };
+    });
   }
 
   async addProduct(data) {
@@ -288,15 +301,17 @@ class MySQLDatabaseEngine {
     const name = data.name;
     const category = data.category || 'Chung';
     const costPrice = parseFloat(data.costPrice || 0);
-    const sellingPrice = parseFloat(data.sellingPrice || 0);
+    const originalPrice = parseFloat(data.originalPrice || data.sellingPrice || 0);
+    const promoPrice = parseFloat(data.promoPrice || 0);
+    const sellingPrice = promoPrice > 0 ? promoPrice : (parseFloat(data.sellingPrice || 0) || originalPrice);
     const stock = parseInt(data.stock || 0);
     const points = parseInt(data.points || 0);
     const unit = data.unit || 'Cái';
 
     await this.pool.query(
-      `INSERT INTO products (id, code, name, category, cost_price, selling_price, stock, reserved, points, unit)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
-      [id, code, name, category, costPrice, sellingPrice, stock, points, unit]
+      `INSERT INTO products (id, code, name, category, cost_price, original_price, promo_price, selling_price, stock, reserved, points, unit)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+      [id, code, name, category, costPrice, originalPrice, promoPrice, sellingPrice, stock, points, unit]
     );
 
     if (stock > 0) {
@@ -307,7 +322,7 @@ class MySQLDatabaseEngine {
       );
     }
 
-    return { id, code, name, category, costPrice, sellingPrice, stock, reserved: 0, available: stock, points, unit };
+    return { id, code, name, category, costPrice, originalPrice, promoPrice, sellingPrice, stock, reserved: 0, available: stock, points, unit };
   }
 
   async importStock(productId, qty, note) {
@@ -338,23 +353,31 @@ class MySQLDatabaseEngine {
   async updateProduct(id, updateData) {
     await this.initDatabase();
     if (!this.pool) return null;
-    const { name, category, costPrice, sellingPrice, stock, points, unit } = updateData;
+    const { code, name, category, costPrice, originalPrice, promoPrice, sellingPrice, stock, points, unit } = updateData;
 
     const [existing] = await this.pool.query('SELECT * FROM products WHERE id = ?', [id]);
     if (existing.length === 0) return null;
     const current = existing[0];
 
-    const newName = name !== undefined ? name : current.name;
+    const newCode = code !== undefined && String(code).trim() !== '' ? String(code).trim() : current.code;
+    const newName = name !== undefined && String(name).trim() !== '' ? String(name).trim() : current.name;
     const newCategory = category !== undefined ? category : current.category;
-    const newCostPrice = costPrice !== undefined ? parseFloat(costPrice) : parseFloat(current.cost_price);
-    const newSellingPrice = sellingPrice !== undefined ? parseFloat(sellingPrice) : parseFloat(current.selling_price);
-    const newStock = stock !== undefined ? parseInt(stock) : parseInt(current.stock);
-    const newPoints = points !== undefined ? parseInt(points) : parseInt(current.points);
-    const newUnit = unit !== undefined ? unit : current.unit;
+    const newCostPrice = costPrice !== undefined ? parseFloat(costPrice) : parseFloat(current.cost_price || 0);
+    const newOriginalPrice = originalPrice !== undefined ? parseFloat(originalPrice) : parseFloat(current.original_price || current.selling_price || 0);
+    const newPromoPrice = promoPrice !== undefined ? parseFloat(promoPrice) : parseFloat(current.promo_price || 0);
+    
+    let newSellingPrice = sellingPrice !== undefined ? parseFloat(sellingPrice) : parseFloat(current.selling_price || 0);
+    if (promoPrice !== undefined || originalPrice !== undefined) {
+      newSellingPrice = newPromoPrice > 0 ? newPromoPrice : (newOriginalPrice > 0 ? newOriginalPrice : newSellingPrice);
+    }
+
+    const newStock = stock !== undefined ? parseInt(stock) : parseInt(current.stock || 0);
+    const newPoints = points !== undefined ? parseInt(points) : parseInt(current.points || 0);
+    const newUnit = unit !== undefined ? unit : (current.unit || 'Cái');
 
     await this.pool.query(
-      `UPDATE products SET name = ?, category = ?, cost_price = ?, selling_price = ?, stock = ?, points = ?, unit = ? WHERE id = ?`,
-      [newName, newCategory, newCostPrice, newSellingPrice, newStock, newPoints, newUnit, id]
+      `UPDATE products SET code = ?, name = ?, category = ?, cost_price = ?, original_price = ?, promo_price = ?, selling_price = ?, stock = ?, points = ?, unit = ? WHERE id = ?`,
+      [newCode, newName, newCategory, newCostPrice, newOriginalPrice, newPromoPrice, newSellingPrice, newStock, newPoints, newUnit, id]
     );
 
     if (stock !== undefined && parseInt(stock) !== parseInt(current.stock)) {
@@ -368,14 +391,16 @@ class MySQLDatabaseEngine {
 
     return {
       id,
-      code: current.code,
+      code: newCode,
       name: newName,
       category: newCategory,
       costPrice: newCostPrice,
+      originalPrice: newOriginalPrice,
+      promoPrice: newPromoPrice,
       sellingPrice: newSellingPrice,
       stock: newStock,
-      reserved: parseInt(current.reserved),
-      available: newStock - parseInt(current.reserved),
+      reserved: parseInt(current.reserved || 0),
+      available: newStock - parseInt(current.reserved || 0),
       points: newPoints,
       unit: newUnit
     };

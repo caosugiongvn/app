@@ -1,5 +1,5 @@
 const API = {
-  baseUrl: '/api',
+  baseUrl: window.location.pathname.includes('/sales-app') ? '/sales-app/api' : '/api',
 
   async request(endpoint, method = 'GET', body = null) {
     try {
@@ -59,7 +59,12 @@ const API = {
 
   // --- SYSTEM & VPS SYNC APIS ---
   getSystemStatus() { return this.request('/system/status'); },
-  syncCode() { return this.request('/system/git-pull', 'POST'); }
+  syncCode() { return this.request('/system/git-pull', 'POST'); },
+
+  // --- FACEBOOK MESSENGER BOT APIS ---
+  getMessengerSettings() { return this.request('/messenger/settings'); },
+  updateMessengerSettings(data) { return this.request('/messenger/settings', 'POST', data); },
+  sendTestMessenger(data) { return this.request('/messenger/test-send', 'POST', data); }
 };
 
 window.API = API;
