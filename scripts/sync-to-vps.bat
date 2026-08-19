@@ -1,33 +1,32 @@
 @echo off
 chcp 65001 > nul
 echo =================================================================
-echo 🔄 SCRIPT ĐỒNG BỘ CODE TỪ MÁY TÍNH CÁ NHÂN LÊN VPS LINUX
+echo  [DONG BO CODE TU MAY TINH LOCAL LEN VPS LINUX]
 echo =================================================================
 echo.
 
-set /p msg="Nhập ghi chú cập nhật (commit message): "
-if "%msg%"=="" set msg="Auto update from local PC %date% %time%"
+set /p msg="Nhap ghi chu cap nhat (commit message, nhan Enter dung mac dinh): "
+if "%msg%"=="" set msg=Auto update from local PC
 
 echo.
-echo 1️⃣  Đang lưu (Commit) các thay đổi mới nhất ở Local...
+echo [1/3] Dang luu (Commit) cac thay doi moi nhat tai Local...
 git add .
 git commit -m "%msg%"
 
 echo.
-echo 2️⃣  Đang đẩy (Push) code lên Git Repository...
-git push origin main || git push
+echo [2/3] Dang day (Push) code len Git Repository...
+git push origin main
 
 echo.
-echo 3️⃣  Đang gửi tín hiệu kích hoạt VPS tự động kéo code & reload PM2...
+echo [3/3] Dang gui tin hieu kich hoat VPS tu dong keo code va reload PM2...
 echo.
-set /p vpsurl="Nhập địa chỉ VPS (ví dụ: http://123.45.67.89:3000 hoặc nhấn Enter dùng mặc định localhost:3000): "
+set /p vpsurl="Nhap IP/Domain VPS (Vi du: http://123.45.67.89:3000 hoac nhan Enter dung localhost:3000): "
 if "%vpsurl%"=="" set vpsurl=http://localhost:3000
 
-curl -X POST "%vpsurl%/api/system/git-pull" -H "Content-Type: application/json"
+curl.exe -X POST "%vpsurl%/api/system/git-pull" -H "Content-Type: application/json"
 
 echo.
-echo.
 echo =================================================================
-echo 🎉 HOÀN TẤT ĐỒNG BỘ CODE LÊN VPS LINUX!
+echo  [HOAN TAT DONG BO CODE LEN VPS!]
 echo =================================================================
 pause
