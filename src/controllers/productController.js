@@ -19,14 +19,14 @@ class ProductController {
    */
   static async createProduct(req, res) {
     try {
-      const { code, name, category, costPrice, originalPrice, promoPrice, sellingPrice, stock, points, unit } = req.body;
+      const { code, name, category, costPrice, originalPrice, promoPrice, sellingPrice, stock, points, unit, imageUrl } = req.body;
 
       if (!name) {
         return res.status(400).json({ success: false, message: 'Vui lòng nhập tên sản phẩm' });
       }
 
       const newProduct = await ProductModel.createProduct({
-        code, name, category, costPrice, originalPrice, promoPrice, sellingPrice, stock, points, unit
+        code, name, category, costPrice, originalPrice, promoPrice, sellingPrice, stock, points, unit, imageUrl
       });
 
       return res.json({ success: true, message: 'Tạo sản phẩm mới thành công!', data: newProduct });

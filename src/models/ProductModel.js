@@ -23,7 +23,7 @@ class ProductModel {
   /**
    * Thêm sản phẩm mới
    */
-  static async createProduct({ code, name, category, costPrice, originalPrice, promoPrice, sellingPrice, stock, points, unit }) {
+  static async createProduct({ code, name, category, costPrice, originalPrice, promoPrice, sellingPrice, stock, points, unit, imageUrl }) {
     const data = dbJSON.readData();
     const orig = Number(originalPrice || sellingPrice) || 0;
     const promo = Number(promoPrice) || 0;
@@ -41,7 +41,8 @@ class ProductModel {
       stock: Number(stock) || 0,
       reserved: 0,
       points: Number(points) || 0,
-      unit: unit || 'Cái'
+      unit: unit || 'Cái',
+      imageUrl: imageUrl || ''
     };
 
     data.products.push(newProduct);
@@ -81,7 +82,7 @@ class ProductModel {
     }
 
     const product = data.products[productIndex];
-    const { code, name, category, costPrice, originalPrice, promoPrice, sellingPrice, stock, points, unit } = updateData;
+    const { code, name, category, costPrice, originalPrice, promoPrice, sellingPrice, stock, points, unit, imageUrl } = updateData;
 
     if (code !== undefined && String(code).trim() !== '') product.code = String(code).trim();
     if (name !== undefined && String(name).trim() !== '') product.name = String(name).trim();
@@ -98,6 +99,7 @@ class ProductModel {
 
     if (points !== undefined && !isNaN(Number(points))) product.points = Number(points);
     if (unit !== undefined) product.unit = unit;
+    if (imageUrl !== undefined) product.imageUrl = imageUrl;
 
     if (stock !== undefined && !isNaN(Number(stock))) {
       const oldStock = Number(product.stock) || 0;

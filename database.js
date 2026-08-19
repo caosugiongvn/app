@@ -36,7 +36,8 @@ class DatabaseEngine {
           stock: 50,
           reserved: 0,
           points: 50,
-          unit: "Cái"
+          unit: "Cái",
+          imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80"
         },
         {
           id: "prod-2",
@@ -48,7 +49,8 @@ class DatabaseEngine {
           stock: 30,
           reserved: 0,
           points: 80,
-          unit: "Cái"
+          unit: "Cái",
+          imageUrl: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80"
         },
         {
           id: "prod-3",
@@ -60,7 +62,8 @@ class DatabaseEngine {
           stock: 100,
           reserved: 0,
           points: 35,
-          unit: "Cái"
+          unit: "Cái",
+          imageUrl: "https://images.unsplash.com/photo-1609592424109-dd9892f1b177?w=500&q=80"
         },
         {
           id: "prod-4",
@@ -72,7 +75,34 @@ class DatabaseEngine {
           stock: 20,
           reserved: 0,
           points: 120,
-          unit: "Cái"
+          unit: "Cái",
+          imageUrl: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&q=80"
+        },
+        {
+          id: "prod-5",
+          code: "CS001",
+          name: "Cây giống Cao Su 209 (Bầu 1 Tầng Lá)",
+          category: "Cây Giống",
+          costPrice: 15000,
+          sellingPrice: 35000,
+          stock: 1000,
+          reserved: 0,
+          points: 5,
+          unit: "Cây",
+          imageUrl: "https://danchigialai.com/wp-content/uploads/2023/11/giong-cao-su-209-1-tang-la-kon-tum-1.jpg"
+        },
+        {
+          id: "prod-6",
+          code: "CP001",
+          name: "Cà Phê Giống Thực Sinh TRS1 (Bầu)",
+          category: "Cây Giống",
+          costPrice: 2000,
+          sellingPrice: 4500,
+          stock: 10000,
+          reserved: 0,
+          points: 2,
+          unit: "Cây",
+          imageUrl: "https://danchigialai.com/wp-content/uploads/2023/07/hat-ca-phe-trs1-1.jpg"
         }
       ],
       regions: [

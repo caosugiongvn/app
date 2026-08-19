@@ -10,7 +10,8 @@
       "stock": 48,
       "reserved": 0,
       "points": 50,
-      "unit": "Cái"
+      "unit": "Cái",
+      "imageUrl": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80"
     },
     {
       "id": "prod-2",
@@ -22,7 +23,8 @@
       "stock": 29,
       "reserved": 0,
       "points": 80,
-      "unit": "Cái"
+      "unit": "Cái",
+      "imageUrl": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80"
     },
     {
       "id": "prod-3",
@@ -34,7 +36,8 @@
       "stock": 98,
       "reserved": 0,
       "points": 35,
-      "unit": "Cái"
+      "unit": "Cái",
+      "imageUrl": "https://images.unsplash.com/photo-1609592424109-dd9892f1b177?w=500&q=80"
     },
     {
       "id": "prod-4",
@@ -46,31 +49,34 @@
       "stock": 17,
       "reserved": 0,
       "points": 120,
-      "unit": "Cái"
+      "unit": "Cái",
+      "imageUrl": "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&q=80"
     },
     {
       "id": "prod-1785857711089",
-      "code": "s-11",
-      "name": "sư",
-      "category": "Chung",
-      "costPrice": 50000,
-      "sellingPrice": 60000,
-      "stock": 100,
+      "code": "CS001",
+      "name": "Cây giống Cao Su 209 (Bầu 1 Tầng Lá)",
+      "category": "Cây Giống",
+      "costPrice": 15000,
+      "sellingPrice": 35000,
+      "stock": 1000,
       "reserved": 0,
-      "points": 1,
-      "unit": "Cái"
+      "points": 5,
+      "unit": "Cây",
+      "imageUrl": "https://danchigialai.com/wp-content/uploads/2023/11/giong-cao-su-209-1-tang-la-kon-tum-1.jpg"
     },
     {
       "id": "prod-1786076313275",
-      "code": "SP901",
-      "name": "CÀ PHÊ BẦU 11",
-      "category": "Chung",
+      "code": "CP001",
+      "name": "Cà Phê Giống Thực Sinh TRS1 (Bầu)",
+      "category": "Cây Giống",
       "costPrice": 2000,
-      "sellingPrice": 4000,
+      "sellingPrice": 4500,
       "stock": 10000,
       "reserved": 0,
-      "points": 1,
-      "unit": "Cái"
+      "points": 2,
+      "unit": "Cây",
+      "imageUrl": "https://danchigialai.com/wp-content/uploads/2023/07/hat-ca-phe-trs1-1.jpg"
     }
   ],
   "regions": [

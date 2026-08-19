@@ -87,6 +87,7 @@ const InventoryView = {
     const promoPriceEl = document.getElementById('new-prod-promo-price');
     const stockEl = document.getElementById('new-prod-stock');
     const pointsEl = document.getElementById('new-prod-points');
+    const imageEl = document.getElementById('new-prod-image');
     const titleEl = document.getElementById('prod-modal-title');
     const submitBtnEl = document.getElementById('prod-modal-submit-btn');
 
@@ -100,6 +101,7 @@ const InventoryView = {
     if (promoPriceEl) promoPriceEl.value = prod.promoPrice || 0;
     if (stockEl) stockEl.value = prod.stock || 0;
     if (pointsEl) pointsEl.value = prod.points || 0;
+    if (imageEl) imageEl.value = prod.imageUrl || '';
 
     if (titleEl) titleEl.textContent = `✏️ Chỉnh Sửa Sản Phẩm: [${prod.code}] ${prod.name}`;
     if (submitBtnEl) submitBtnEl.textContent = '💾 Lưu Tất Cả Thay Đổi';
@@ -129,6 +131,7 @@ const InventoryView = {
     const promoPrice = document.getElementById('new-prod-promo-price')?.value;
     const stock = document.getElementById('new-prod-stock')?.value;
     const points = document.getElementById('new-prod-points')?.value;
+    const imageUrl = document.getElementById('new-prod-image')?.value;
 
     const productData = {
       code,
@@ -139,7 +142,8 @@ const InventoryView = {
       originalPrice: Number(originalPrice) || 0,
       promoPrice: Number(promoPrice) || 0,
       stock: Number(stock) || 0,
-      points: Number(points) || 0
+      points: Number(points) || 0,
+      imageUrl: imageUrl ? imageUrl.trim() : ''
     };
 
     let res;
@@ -190,7 +194,7 @@ const InventoryView = {
     }
 
     if (!products || products.length === 0) {
-      this.tableBody.innerHTML = '<tr><td colspan="12" style="text-align: center; color: var(--text-muted); padding: 30px;">Chưa có sản phẩm nào trong kho</td></tr>';
+      this.tableBody.innerHTML = '<tr><td colspan="13" style="text-align: center; color: var(--text-muted); padding: 30px;">Chưa có sản phẩm nào trong kho</td></tr>';
       return;
     }
 
@@ -200,9 +204,14 @@ const InventoryView = {
       const promoPrice = p.promoPrice || 0;
       const effSelling = p.sellingPrice || (promoPrice > 0 ? promoPrice : origPrice);
 
+      const imgCell = p.imageUrl
+        ? `<img src="${p.imageUrl}" alt="${p.name}" class="product-table-thumb" onerror="this.outerHTML='<div class=\\'product-table-thumb-empty\\'>🌿</div>';">`
+        : `<div class="product-table-thumb-empty">🌿</div>`;
+
       return `
         <tr>
           <td style="font-weight: 700; color: var(--accent-primary);">${p.code || 'N/A'}</td>
+          <td>${imgCell}</td>
           <td style="font-weight: 600; min-width: 160px;">${p.name}</td>
           <td><span class="badge badge-secondary" style="font-size: 11px;">${p.category || 'Chung'}</span></td>
           <td>${(p.costPrice || 0).toLocaleString()} đ</td>

@@ -203,30 +203,49 @@ const CTVView = {
         ? `<span class="badge badge-success" style="font-size: 10px; padding: 2px 6px;">Kho: ${available}</span>`
         : `<span class="badge badge-danger" style="font-size: 10px; padding: 2px 6px;">Hết hàng</span>`;
 
+      const imgHtml = p.imageUrl 
+        ? `<img src="${p.imageUrl}" alt="${p.name}" class="product-card-img" onerror="this.outerHTML='<div class=\\'product-img-fallback\\'>📦</div>';">`
+        : `<div class="product-img-fallback">🌿</div>`;
+
+      const origPrice = p.originalPrice || 0;
+      const hasDiscount = origPrice > (p.sellingPrice || 0);
+
       return `
-        <div class="glass-card" style="padding: 12px; display: flex; flex-direction: column; justify-content: space-between; background: rgba(255,255,255,0.02); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+        <div class="product-card">
           <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span style="font-size: 10px; font-weight: 700; color: var(--accent-primary); background: rgba(99, 102, 241, 0.15); padding: 1px 6px; border-radius: 4px;">
-                ${p.code || 'SP'}
-              </span>
-              ${stockBadge}
+            <div class="product-image-wrap">
+              <div class="product-badge-overlay">
+                <span style="font-size: 10px; font-weight: 700; color: var(--accent-primary); background: rgba(99, 102, 241, 0.25); backdrop-filter: blur(4px); padding: 2px 8px; border-radius: 6px;">
+                  ${p.code || 'SP'}
+                </span>
+              </div>
+              <div class="product-stock-overlay">
+                ${stockBadge}
+              </div>
+              ${imgHtml}
             </div>
-            <div style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; line-height: 1.2;">
+
+            <div style="font-size: 12px; font-weight: 600; color: var(--accent-secondary); margin-bottom: 2px;">
+              📁 ${p.category || 'Chung'}
+            </div>
+            <div style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; line-height: 1.3; height: 38px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
               ${p.name}
             </div>
           </div>
 
           <div>
-            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-              <span style="font-size: 16px; font-weight: 800; color: var(--success); font-family: 'Outfit', sans-serif;">
-                ${(p.sellingPrice || 0).toLocaleString()} đ
-              </span>
-              <span style="font-size: 11px; color: var(--accent-secondary); font-weight: 600;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+              <div>
+                ${hasDiscount ? `<div style="font-size: 11px; color: var(--text-muted); text-decoration: line-through;">${origPrice.toLocaleString()} đ</div>` : ''}
+                <div style="font-size: 16px; font-weight: 800; color: var(--success); font-family: 'Outfit', sans-serif;">
+                  ${(p.sellingPrice || 0).toLocaleString()} đ
+                </div>
+              </div>
+              <span class="badge badge-info" style="font-size: 11px; font-weight: 700;">
                 +${p.points || 0} pts
               </span>
             </div>
-            <button type="button" class="btn btn-sm btn-primary btn-add-ctv-order" data-id="${p.id}" data-name="${p.name}" style="width: 100%; font-size: 12px; padding: 6px; justify-content: center; font-weight: 600;">
+            <button type="button" class="btn btn-sm btn-primary btn-add-ctv-order" data-id="${p.id}" data-name="${p.name}" style="width: 100%; font-size: 12px; padding: 8px; justify-content: center; font-weight: 700;">
               ➕ Chọn vào đơn
             </button>
           </div>

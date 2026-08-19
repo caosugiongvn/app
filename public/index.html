@@ -21,13 +21,13 @@
   <div class="app-wrapper">
     <!-- Navbar Header -->
     <header class="navbar glass-card">
-      <div class="brand-logo">
-        <div class="logo-icon">📦</div>
+      <a href="https://danchigialai.com" target="_blank" class="brand-logo" title="Truy cập Website Dan Chi Gia Lai">
+        <img src="images/logo-dan-chi-gia-lai.png" alt="Logo Đan Chi Gia Lai" class="brand-logo-img" onerror="this.onerror=null; this.src='https://danchigialai.com/wp-content/uploads/2025/09/logo-dan-chi-gia-lai.png';">
         <div>
-          <div class="brand-title">Trang bán hàng Đan Chi Gia Lai</div>
-          <div class="brand-subtitle">Quản lý Bán hàng & Kho từ xa</div>
+          <div class="brand-title">Đan Chi Gia Lai</div>
+          <div class="brand-subtitle">Trang Bán Hàng & Quản Lý Kho Từ Xa</div>
         </div>
-      </div>
+      </a>
 
       <div class="nav-actions">
         <!-- Guest Actions -->
@@ -243,6 +243,7 @@
               <thead>
                 <tr>
                   <th>Mã SP</th>
+                  <th>Hình Ảnh</th>
                   <th>Tên Sản Phẩm</th>
                   <th>Danh Mục</th>
                   <th>Giá Vốn</th>
@@ -661,6 +662,18 @@
           <div class="form-group">
             <label class="form-label" style="font-weight: 600;">Điểm Thưởng CTV</label>
             <input type="number" id="new-prod-points" class="form-control" placeholder="30" min="0" value="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-weight: 600;">🖼️ Link/URL Hình Ảnh Sản Phẩm</label>
+          <input type="url" id="new-prod-image" class="form-control" placeholder="https://danchigialai.com/... hooc https://images.unsplash.com/...">
+          <div class="image-preset-bar">
+            <span style="font-size: 11px; color: var(--text-muted);">Mẫu nhanh:</span>
+            <button type="button" class="preset-chip" onclick="document.getElementById('new-prod-image').value='https://danchigialai.com/wp-content/uploads/2023/11/giong-cao-su-209-1-tang-la-kon-tum-1.jpg'">🌿 Cao su 209</button>
+            <button type="button" class="preset-chip" onclick="document.getElementById('new-prod-image').value='https://danchigialai.com/wp-content/uploads/2023/07/hat-ca-phe-trs1-1.jpg'">☕ Cà phê TRS1</button>
+            <button type="button" class="preset-chip" onclick="document.getElementById('new-prod-image').value='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80'">🎧 Tai nghe</button>
+            <button type="button" class="preset-chip" onclick="document.getElementById('new-prod-image').value='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80'">⌚ Đồng hồ</button>
           </div>
         </div>
 
