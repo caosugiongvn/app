@@ -408,10 +408,10 @@ class MySQLDatabaseEngine {
         const [wpRows] = await this.pool.query(`
           SELECT 
             p.ID AS id,
-            p.post_title AS name,
-            p.post_type AS post_type,
-            p.post_parent AS post_parent,
-            p.post_date AS created_at,
+            MAX(p.post_title) AS name,
+            MAX(p.post_type) AS post_type,
+            MAX(p.post_parent) AS post_parent,
+            MAX(p.post_date) AS created_at,
             MAX(CASE WHEN pm.meta_key = '_sku' THEN pm.meta_value END) AS code,
             MAX(CASE WHEN pm.meta_key = '_regular_price' THEN pm.meta_value END) AS raw_regular_price,
             MAX(CASE WHEN pm.meta_key = '_sale_price' THEN pm.meta_value END) AS raw_sale_price,
@@ -422,16 +422,16 @@ class MySQLDatabaseEngine {
             MAX(CASE WHEN pm.meta_key = '_app_points' THEN pm.meta_value END) AS raw_points
           FROM ${prefix}posts p
           LEFT JOIN ${prefix}postmeta pm ON p.ID = pm.post_id
-          WHERE p.post_type IN ('product', 'product_variation') AND p.post_status NOT IN ('trash', 'auto-draft')
+          WHERE p.post_type IN ('product', 'product_variation', 'post') AND p.post_status NOT IN ('trash', 'auto-draft')
           GROUP BY p.ID
-          ORDER BY p.post_date DESC
+          ORDER BY p.ID DESC
         `);
 
         if (wpRows && wpRows.length > 0) {
           const [cats] = await this.pool.query(`
             SELECT tr.object_id AS product_id, t.name AS category_name
             FROM ${prefix}term_relationships tr
-            JOIN ${prefix}term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id AND tt.taxonomy = 'product_cat'
+            JOIN ${prefix}term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id AND tt.taxonomy IN ('product_cat', 'category')
             JOIN ${prefix}terms t ON tt.term_id = t.term_id
           `);
           const catMap = {};
@@ -481,8 +481,8 @@ class MySQLDatabaseEngine {
             }
           });
 
-          // All WooCommerce products (main products or variations with custom titles)
-          const candidateProducts = wpRows.filter(r => r.post_type === 'product' || (r.post_type === 'product_variation' && r.name && r.name.trim().length > 0 && r.name !== 'Variations'));
+          // All WooCommerce products and items with prices or product category tags
+          const candidateProducts = wpRows.filter(r => r.post_type === 'product' || (r.post_type === 'product_variation' && r.name && r.name.trim().length > 0 && r.name !== 'Variations') || (r.post_type === 'post' && (r.raw_price || r.raw_regular_price || catMap[r.id])));
 
           wpProdList = candidateProducts.map(r => {
             const rawSelling = parseWpPrice(r.raw_price);
