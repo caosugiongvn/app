@@ -109,6 +109,24 @@ class UserModel {
     }
   }
 
+  static async updatePassword(phone, newPassword) {
+    try {
+      const updated = await dbMySQL.updateUserPassword(phone, newPassword);
+      if (updated) return true;
+    } catch (err) {
+      console.warn('⚠️ MySQL updatePassword fallback JSON:', err.message);
+    }
+    const data = dbJSON.readData();
+    const users = data.users || [];
+    const user = users.find(u => u.phone === phone);
+    if (user) {
+      user.password = newPassword;
+      dbJSON.saveData(data);
+      return true;
+    }
+    return false;
+  }
+
   /**
    * Cập nhật Vai trò & Khu vực người dùng (Admin)
    */

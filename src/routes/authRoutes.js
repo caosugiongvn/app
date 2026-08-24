@@ -8,6 +8,9 @@ router.post('/register', AuthController.register);
 // Đăng nhập
 router.post('/login', AuthController.login);
 
+// Đặt lại mật khẩu (Quên mật khẩu)
+router.post('/reset-password', AuthController.resetPassword);
+
 // Đăng ký làm CTV
 router.post('/apply-ctv', AuthController.applyCTV);
 

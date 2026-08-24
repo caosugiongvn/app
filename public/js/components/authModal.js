@@ -25,6 +25,12 @@ class AuthModal {
     this.btnLogout = document.getElementById('btn-user-logout');
     this.regRegionSelect = document.getElementById('reg-region');
 
+    this.forgotModal = document.getElementById('forgot-modal');
+    this.forgotForm = document.getElementById('forgot-password-form');
+    this.btnCloseForgot = document.getElementById('close-forgot-modal-btn');
+    this.linkOpenForgot = document.getElementById('link-open-forgot-modal');
+    this.linkForgotToLogin = document.getElementById('link-forgot-to-login');
+
     this.initEvents();
   }
 
@@ -35,6 +41,26 @@ class AuthModal {
 
     if (this.btnOpenRegister) {
       this.btnOpenRegister.addEventListener('click', () => this.openRegister());
+    }
+
+    if (this.linkOpenForgot) {
+      this.linkOpenForgot.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.closeLogin();
+        this.openForgot();
+      });
+    }
+
+    if (this.linkForgotToLogin) {
+      this.linkForgotToLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.closeForgot();
+        this.openLogin();
+      });
+    }
+
+    if (this.btnCloseForgot) {
+      this.btnCloseForgot.addEventListener('click', () => this.closeForgot());
     }
 
     // Banner Buttons
@@ -100,6 +126,10 @@ class AuthModal {
       this.loginForm.addEventListener('submit', (e) => this.handleLoginSubmit(e));
     }
 
+    if (this.forgotForm) {
+      this.forgotForm.addEventListener('submit', (e) => this.handleForgotSubmit(e));
+    }
+
     // Subscribe to store state changes
     window.store.subscribe((state) => this.renderUserState(state.currentUser));
     this.renderUserState(window.store.state.currentUser);
@@ -133,6 +163,14 @@ class AuthModal {
 
   closeLogin() {
     this.loginModal?.classList.remove('active');
+  }
+
+  openForgot() {
+    this.forgotModal?.classList.add('active');
+  }
+
+  closeForgot() {
+    this.forgotModal?.classList.remove('active');
   }
 
   async handleRegisterSubmit(e) {
@@ -178,6 +216,30 @@ class AuthModal {
 
       window.store.setCurrentUser(res.data);
       window.store.fetchAll();
+    } else {
+      alert(`⚠️ ${res.message}`);
+    }
+  }
+
+  async handleForgotSubmit(e) {
+    e.preventDefault();
+
+    const phone = document.getElementById('forgot-phone')?.value;
+    const newPassword = document.getElementById('forgot-new-password')?.value;
+    const confirmPassword = document.getElementById('forgot-confirm-password')?.value;
+
+    if (newPassword !== confirmPassword) {
+      alert('⚠️ Mật khẩu mới và Nhập lại mật khẩu không trùng khớp!');
+      return;
+    }
+
+    const res = await window.API.resetPassword({ phone, newPassword, confirmPassword });
+
+    if (res.success) {
+      alert(res.message);
+      this.closeForgot();
+      this.forgotForm.reset();
+      this.openLogin();
     } else {
       alert(`⚠️ ${res.message}`);
     }

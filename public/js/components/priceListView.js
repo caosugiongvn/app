@@ -219,7 +219,9 @@ class PriceListView {
 
       // Filter products: Hide out-of-stock items (available <= 0) and filter by search & category tab
       let filteredProds = products.filter(p => {
-        const available = p.available !== undefined ? p.available : (p.stock - (p.reserved || 0));
+        const stockVal = Number(p.stock !== undefined ? p.stock : 9999);
+        const reservedVal = Number(p.reserved || 0);
+        const available = p.available !== undefined ? Number(p.available) : (stockVal - reservedVal);
         return available > 0;
       });
 
@@ -228,7 +230,8 @@ class PriceListView {
         filteredProds = filteredProds.filter(p => (p.name && p.name.toLowerCase().includes(q)) || (p.code && p.code.toLowerCase().includes(q)));
       }
       if (this.selectedCategory && this.selectedCategory !== 'ALL') {
-        filteredProds = filteredProds.filter(p => p.category === this.selectedCategory);
+        const targetCat = this.selectedCategory.trim().toLowerCase();
+        filteredProds = filteredProds.filter(p => (p.category || 'Chung').trim().toLowerCase() === targetCat);
       }
 
       // Leaderboard list

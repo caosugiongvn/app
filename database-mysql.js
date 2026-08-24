@@ -228,6 +228,16 @@ class MySQLDatabaseEngine {
     return true;
   }
 
+  async updateUserPassword(phone, newPassword) {
+    await this.initDatabase();
+    if (!this.pool) throw new Error('Chưa kết nối CSDL MySQL');
+    const [result] = await this.pool.query(
+      'UPDATE users SET password = ? WHERE phone = ?',
+      [newPassword, phone]
+    );
+    return result.affectedRows > 0;
+  }
+
   async updateUserRoleAndRegion(userId, role, region) {
     await this.initDatabase();
     if (!this.pool) throw new Error('Chưa kết nối CSDL MySQL');

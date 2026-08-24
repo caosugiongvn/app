@@ -46,7 +46,13 @@ const API = {
 
   // --- AUTH & USER APIS ---
   register(userData) { return this.request('/auth/register', 'POST', userData); },
-  login(credentials) { return this.request('/auth/login', 'POST', credentials); },
+  login(phoneOrCredentials, password) {
+    const payload = (typeof phoneOrCredentials === 'object' && phoneOrCredentials !== null)
+      ? phoneOrCredentials
+      : { phone: phoneOrCredentials, password };
+    return this.request('/auth/login', 'POST', payload);
+  },
+  resetPassword(data) { return this.request('/auth/reset-password', 'POST', data); },
   getUsers() { return this.request('/auth/users'); },
   applyCTV(userId) { return this.request('/auth/apply-ctv', 'POST', { userId }); },
   updateUserRoleAndRegion(userId, role, region) { return this.request('/auth/users/role-region', 'PUT', { userId, role, region }); },

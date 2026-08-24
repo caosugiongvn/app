@@ -102,6 +102,59 @@ class AuthController {
   }
 
   /**
+   * Đặt lại mật khẩu (Quên mật khẩu)
+   */
+  static async resetPassword(req, res) {
+    try {
+      const { phone, newPassword, confirmPassword } = req.body;
+
+      if (!phone || !newPassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vui lòng cung cấp Số điện thoại và Mật khẩu mới!'
+        });
+      }
+
+      if (confirmPassword !== undefined && newPassword.trim() !== confirmPassword.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mật khẩu mới và Nhập lại mật khẩu không trùng khớp!'
+        });
+      }
+
+      const phoneRegex = /^[0-9]{9,11}$/;
+      const cleanPhone = phone.trim();
+      if (!phoneRegex.test(cleanPhone)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Số điện thoại không hợp lệ (phải gồm 9-11 chữ số)'
+        });
+      }
+
+      const user = await UserModel.findByPhone(cleanPhone);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Số điện thoại này chưa được đăng ký trong hệ thống!'
+        });
+      }
+
+      await UserModel.updatePassword(cleanPhone, newPassword.trim());
+
+      return res.json({
+        success: true,
+        message: '🔑 Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay bằng mật khẩu mới.'
+      });
+    } catch (error) {
+      console.error('❌ Lỗi đặt lại mật khẩu:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Lỗi hệ thống khi đặt lại mật khẩu'
+      });
+    }
+  }
+
+  /**
    * Gửi yêu cầu xin làm CTV
    */
   static async applyCTV(req, res) {
