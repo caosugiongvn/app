@@ -6,6 +6,14 @@ const config = require('./src/config/config');
 const dbMySQL = require('./database-mysql');
 const apiRoutes = require('./src/routes');
 
+// Toàn cục: Ngăn chặn tiến trình crash do lỗi ngầm trên VPS
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('⚠️ Global Unhandled Rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('⚠️ Global Uncaught Exception:', err.message);
+});
+
 // Express App Initialization
 const app = express();
 
@@ -25,14 +33,18 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Khởi chạy Server & Kết nối MySQL Database
-app.listen(config.PORT, config.HOST, async () => {
+// Khởi chạy Server (Lắng nghe cổng IPv4/IPv6 Dual-Stack để Nginx reverse proxy không bị 502)
+app.listen(config.PORT, async () => {
   console.log('\n================================================================');
   console.log(`🚀 HỆ THỐNG QUẢN LÝ BÁN HÀNG & TỒN KHO (MÔ HÌNH MVC - VPS LINUX READY)`);
   console.log('================================================================');
   
-  // Khởi tạo kết nối & Database schema
-  await dbMySQL.initDatabase();
+  // Khởi tạo kết nối & Database schema an toàn
+  try {
+    await dbMySQL.initDatabase();
+  } catch (err) {
+    console.error('⚠️ Lỗi kết nối CSDL khi khởi động:', err.message);
+  }
 
   const ipList = config.getLocalIpAddresses();
   console.log(`\n📱 TRUY CẬP HỆ THỐNG (PORT ${config.PORT}):`);
