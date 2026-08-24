@@ -396,13 +396,13 @@ class MySQLDatabaseEngine {
             p.post_parent AS post_parent,
             p.post_date AS created_at,
             MAX(CASE WHEN pm.meta_key = '_sku' THEN pm.meta_value END) AS code,
-            MAX(CASE WHEN pm.meta_key = '_regular_price' THEN CAST(NULLIF(REPLACE(pm.meta_value, ',', ''), '') AS DECIMAL(15,2)) END) AS original_price,
-            MAX(CASE WHEN pm.meta_key = '_sale_price' THEN CAST(NULLIF(REPLACE(pm.meta_value, ',', ''), '') AS DECIMAL(15,2)) END) AS promo_price,
-            MAX(CASE WHEN pm.meta_key = '_price' THEN CAST(NULLIF(REPLACE(pm.meta_value, ',', ''), '') AS DECIMAL(15,2)) END) AS selling_price,
-            MAX(CASE WHEN pm.meta_key = '_stock' THEN CAST(NULLIF(REPLACE(pm.meta_value, ',', ''), '') AS SIGNED) END) AS stock,
+            MAX(CASE WHEN pm.meta_key = '_regular_price' THEN pm.meta_value END) AS raw_regular_price,
+            MAX(CASE WHEN pm.meta_key = '_sale_price' THEN pm.meta_value END) AS raw_sale_price,
+            MAX(CASE WHEN pm.meta_key = '_price' THEN pm.meta_value END) AS raw_price,
+            MAX(CASE WHEN pm.meta_key = '_stock' THEN pm.meta_value END) AS raw_stock,
             MAX(CASE WHEN pm.meta_key = '_stock_status' THEN pm.meta_value END) AS stock_status,
             MAX(CASE WHEN pm.meta_key = '_thumbnail_id' THEN pm.meta_value END) AS thumbnail_id,
-            MAX(CASE WHEN pm.meta_key = '_app_points' THEN CAST(NULLIF(REPLACE(pm.meta_value, ',', ''), '') AS SIGNED) END) AS points
+            MAX(CASE WHEN pm.meta_key = '_app_points' THEN pm.meta_value END) AS raw_points
           FROM ${prefix}posts p
           LEFT JOIN ${prefix}postmeta pm ON p.ID = pm.post_id
           WHERE (p.post_type IN ('product', 'product_variation') OR p.ID IN (
@@ -434,12 +434,25 @@ class MySQLDatabaseEngine {
           const imgMap = {};
           (imgRows || []).forEach(img => { imgMap[img.ID] = img.guid; });
 
+          function parseWpPrice(val) {
+            if (val === null || val === undefined) return 0;
+            let str = String(val).trim();
+            if (!str) return 0;
+            if (/^\d{1,3}(\.\d{3})+$/.test(str)) {
+              str = str.replace(/\./g, '');
+            } else if (/^\d{1,3}(,\d{3})+$/.test(str)) {
+              str = str.replace(/,/g, '');
+            }
+            const num = parseFloat(str.replace(/,/g, ''));
+            return isNaN(num) ? 0 : num;
+          }
+
           // Map variation prices by parent product ID
           const varPrices = {};
           wpRows.filter(r => r.post_type === 'product_variation' && r.post_parent > 0).forEach(v => {
-            const vSelling = parseFloat(v.selling_price || 0);
-            const vReg = parseFloat(v.original_price || 0);
-            const vSale = parseFloat(v.promo_price || 0);
+            const vSelling = parseWpPrice(v.raw_price);
+            const vReg = parseWpPrice(v.raw_regular_price);
+            const vSale = parseWpPrice(v.raw_sale_price);
             const pId = v.post_parent;
 
             if (!varPrices[pId]) {
@@ -461,9 +474,9 @@ class MySQLDatabaseEngine {
           const candidateProducts = wpRows.filter(r => r.post_type === 'product' || (r.post_type === 'product_variation' && r.name && r.name !== 'Variations') || catMap[r.id]);
 
           wpProdList = candidateProducts.map(r => {
-            let rawSelling = parseFloat(r.selling_price || 0);
-            let rawReg = parseFloat(r.original_price || 0);
-            let rawSale = parseFloat(r.promo_price || 0);
+            let rawSelling = parseWpPrice(r.raw_price);
+            let rawReg = parseWpPrice(r.raw_regular_price);
+            let rawSale = parseWpPrice(r.raw_sale_price);
 
             // Fallback to variation price if main product has no price
             if (rawSelling === 0 && rawReg === 0 && varPrices[r.id]) {
@@ -473,11 +486,12 @@ class MySQLDatabaseEngine {
             }
 
             const orig = rawReg > 0 ? rawReg : (rawSelling > 0 ? rawSelling : rawSale);
-            const promo = (rawSale > 0 && rawSale < orig) ? rawSale : 0;
+            const promo = (rawSale > 0 && rawSale < orig) ? rawSale : (rawSale > 0 ? rawSale : 0);
+            // Strict priority: Sale Price > Active Selling Price > Regular Price
             const effSelling = promo > 0 ? promo : (rawSelling > 0 ? rawSelling : orig);
 
             const isOutOfStock = r.stock_status === 'outofstock';
-            const rawStock = parseInt(r.stock !== null && r.stock !== undefined && !isNaN(r.stock) ? r.stock : (isOutOfStock ? 0 : 9999));
+            const rawStock = parseInt(r.raw_stock !== null && r.raw_stock !== undefined && !isNaN(r.raw_stock) ? r.raw_stock : (isOutOfStock ? 0 : 9999));
             const stock = isOutOfStock ? 0 : Math.max(1, rawStock);
             const imageUrl = r.thumbnail_id && imgMap[r.thumbnail_id] ? imgMap[r.thumbnail_id] : null;
 
@@ -489,12 +503,12 @@ class MySQLDatabaseEngine {
               category: catMap[r.id] || 'Cây Giống',
               costPrice: Math.round(effSelling * 0.5),
               originalPrice: orig || effSelling,
-              promoPrice: promo,
+              promoPrice: promo || effSelling,
               sellingPrice: effSelling,
               stock: stock,
               reserved: 0,
               available: stock,
-              points: parseInt(r.points || Math.round(effSelling / 10000)),
+              points: parseInt(parseWpPrice(r.raw_points) || Math.round(effSelling / 10000)),
               unit: 'Cây',
               imageUrl: imageUrl
             };
