@@ -132,21 +132,6 @@ class MySQLDatabaseEngine {
             ('usr-admin-hoa', '0979366316', 'TH2532621991', 'Nguyễn Thanh Hoà', 'ADMIN', 'Hà Nội', 'NONE');
           `);
           await this.pool.query('UPDATE users SET role = "ADMIN", ctv_request = "NONE" WHERE phone = "0979366316";');
-
-          // Seed complete agricultural products catalog from danchigialai.com
-          await this.pool.query(`
-            INSERT IGNORE INTO products (id, code, name, category, cost_price, original_price, promo_price, selling_price, stock, reserved, points, unit) VALUES
-            ('prod-cs209', 'CS001', 'Cây giống Cao Su 209 (Bầu 1 Tầng Lá)', 'Cây Giống', 15000, 35000, 0, 35000, 1000, 0, 5, 'Cây'),
-            ('prod-trs1', 'CP001', 'Cà Phê Giống Thực Sinh TRS1 (Bầu)', 'Cây Giống', 2000, 4500, 0, 4500, 10000, 0, 2, 'Cây'),
-            ('prod-ts5', 'CP002', 'Cà Phê Giống Ghép Xanh Lún TS5 (Gốc Mít)', 'Cây Giống', 8000, 18000, 16000, 16000, 3000, 0, 8, 'Cây'),
-            ('prod-sr001', 'SR001', 'Cây Giống Sầu Riêng Ri6 (Gốc Ghép 2 Năm)', 'Cây Giống', 60000, 120000, 105000, 105000, 500, 0, 15, 'Cây'),
-            ('prod-pb001', 'PB001', 'Phân Bón NPK 16-16-8 Cao Cấp (Bao 50kg)', 'Phân Bón', 450000, 680000, 650000, 650000, 250, 0, 30, 'Bao'),
-            ('prod-pb002', 'PB002', 'Phân Bón Hữu Cơ Sinh Học K-Humate (Can 5L)', 'Phân Bón', 220000, 380000, 0, 380000, 350, 0, 20, 'Can'),
-            ('prod-bv001', 'BV001', 'Thuốc Trừ Bệnh Nấm Phấn Trắng Ridomil (Gói 100g)', 'Thuốc BVTV', 42000, 68000, 65000, 65000, 800, 0, 5, 'Gói'),
-            ('prod-bv002', 'BV002', 'Thuốc Trừ Sâu Sinh Học Chống Rệp Sáp (Chai 500ml)', 'Thuốc BVTV', 75000, 135000, 120000, 120000, 600, 0, 10, 'Chai'),
-            ('prod-vt001', 'VT001', 'Túi Bầu Đất Ươm Cây Giống Nông Nghiệp (Ký 1kg)', 'Vật Tư Nông Nghiệp', 14000, 25000, 0, 25000, 5000, 0, 2, 'Kg'),
-            ('prod-vt002', 'VT002', 'Hệ Thống Dây Tưới Nhỏ Giọt Nông Nghiệp (Cuộn 100m)', 'Vật Tư Nông Nghiệp', 280000, 480000, 450000, 450000, 150, 0, 25, 'Cuộn')
-          ;`);
         } catch (e) {}
       }
 
