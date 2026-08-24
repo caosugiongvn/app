@@ -411,6 +411,8 @@ class MySQLDatabaseEngine {
             MAX(p.post_title) AS name,
             MAX(p.post_type) AS post_type,
             MAX(p.post_parent) AS post_parent,
+            MAX(p.post_content) AS post_content,
+            MAX(p.post_excerpt) AS post_excerpt,
             MAX(p.post_date) AS created_at,
             MAX(CASE WHEN pm.meta_key = '_sku' THEN pm.meta_value END) AS code,
             MAX(CASE WHEN pm.meta_key = '_regular_price' THEN pm.meta_value END) AS raw_regular_price,
@@ -422,7 +424,7 @@ class MySQLDatabaseEngine {
             MAX(CASE WHEN pm.meta_key = '_app_points' THEN pm.meta_value END) AS raw_points
           FROM ${prefix}posts p
           LEFT JOIN ${prefix}postmeta pm ON p.ID = pm.post_id
-          WHERE p.post_type IN ('product', 'product_variation', 'post') AND p.post_status NOT IN ('trash', 'auto-draft')
+          WHERE p.post_type IN ('product', 'product_variation', 'post') AND p.post_status NOT IN ('trash', 'auto-draft', 'inherit')
           GROUP BY p.ID
           ORDER BY p.ID DESC
         `);
@@ -458,6 +460,16 @@ class MySQLDatabaseEngine {
             return isNaN(num) ? 0 : num;
           }
 
+          function parsePriceFromText(text) {
+            if (!text) return 0;
+            const match = text.match(/([0-9]{1,3}(?:\.[0-9]{3})+|[0-9]{4,7})\s*(?:đ|vnd|vnđ)/i);
+            if (match) {
+              const raw = match[1].replace(/\./g, '');
+              return parseFloat(raw) || 0;
+            }
+            return 0;
+          }
+
           // Map variation prices by parent product ID
           const varPrices = {};
           wpRows.filter(r => r.post_type === 'product_variation' && r.post_parent > 0).forEach(v => {
@@ -481,13 +493,22 @@ class MySQLDatabaseEngine {
             }
           });
 
-          // All WooCommerce products and items with prices or product category tags
-          const candidateProducts = wpRows.filter(r => r.post_type === 'product' || (r.post_type === 'product_variation' && r.name && r.name.trim().length > 0 && r.name !== 'Variations') || (r.post_type === 'post' && (r.raw_price || r.raw_regular_price || catMap[r.id])));
+          // All published items (WooCommerce products, variations, and plant price items)
+          const candidateProducts = wpRows.filter(r => r.post_type === 'product' || (r.post_type === 'product_variation' && r.name && r.name.trim().length > 0 && r.name !== 'Variations') || (r.post_type === 'post' && r.name && r.name.trim().length > 0));
 
           wpProdList = candidateProducts.map(r => {
-            const rawSelling = parseWpPrice(r.raw_price);
-            const rawReg = parseWpPrice(r.raw_regular_price);
-            const rawSale = parseWpPrice(r.raw_sale_price);
+            let rawSelling = parseWpPrice(r.raw_price);
+            let rawReg = parseWpPrice(r.raw_regular_price);
+            let rawSale = parseWpPrice(r.raw_sale_price);
+
+            // Text price extraction fallback if meta price is 0
+            if (rawSelling === 0 && rawReg === 0 && rawSale === 0) {
+              const textPrice = parsePriceFromText(r.post_content) || parsePriceFromText(r.post_excerpt);
+              if (textPrice > 0) {
+                rawSelling = textPrice;
+                rawReg = textPrice;
+              }
+            }
 
             let effSelling = 0;
             if (rawSale > 0) {
