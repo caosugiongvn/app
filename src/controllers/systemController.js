@@ -49,42 +49,39 @@ class SystemController {
 
     console.log('🔄 Đang tiến hành kéo code mới nhất từ Git Repository...');
 
-    // Bước 1: Thực thi git pull
-    exec('git pull origin main || git pull', { cwd: rootDir }, (pullErr, pullStdout, pullStderr) => {
+    // Bước 1: Thực thi git pull (tự động stash nếu có xung đột local)
+    const pullCmd = 'git pull origin main || (git stash && git pull origin main)';
+    exec(pullCmd, { cwd: rootDir }, (pullErr, pullStdout, pullStderr) => {
       if (pullErr) {
         console.error('❌ Lỗi khi git pull:', pullErr.message);
         return res.status(500).json({
           success: false,
-          message: `Lỗi kéo code mới từ Git: ${pullErr.message}`,
+          message: `Lỗi kéo code từ Git: ${pullErr.message}`,
           detail: pullStderr
         });
       }
 
-      const outputLogs = [pullStdout.trim()];
+      const outputLogs = [pullStdout.trim() || 'Đã cập nhật code từ Git thành công.'];
       console.log('✅ Git pull thành công:', pullStdout.trim());
 
-      // Bước 2: Tự động перезапуск PM2 nếu đang chạy trên VPS Linux
-      if (isLinux) {
-        exec('pm2 reload sales-app || pm2 restart sales-app', (pm2Err, pm2Stdout) => {
-          if (!pm2Err) {
-            outputLogs.push('✅ Đã tự động reload dịch vụ PM2 sales-app thành công!');
-          } else {
-            outputLogs.push('⚠️ Đã cập nhật code, nhưng chưa reload PM2 (PM2 chưa được khởi tạo với tên sales-app).');
-          }
+      // Bước 2: Phản hồi về cho Client trước để tránh ngắt kết nối HTTP
+      res.json({
+        success: true,
+        message: 'Đồng bộ & Cập nhật Code thành công trên VPS!',
+        logs: outputLogs
+      });
 
-          return res.json({
-            success: true,
-            message: 'Đồng bộ & Cập nhật Code thành công trên VPS Linux!',
-            logs: outputLogs
+      // Bước 3: Tự động reload PM2 nếu đang chạy trên VPS Linux sau khi đã trả kết quả về browser
+      if (isLinux) {
+        setTimeout(() => {
+          exec('pm2 reload sales-app || pm2 restart sales-app || pm2 restart all', (pm2Err, pm2Stdout) => {
+            if (!pm2Err) {
+              console.log('✅ Đã tự động reload PM2 thành công!');
+            } else {
+              console.log('⚠️ PM2 reload notice:', pm2Err.message);
+            }
           });
-        });
-      } else {
-        outputLogs.push('ℹ️ Đã cập nhật code thành công trên máy Local (Windows). Vui lòng khởi động lại server nếu cần.');
-        return res.json({
-          success: true,
-          message: 'Đã kéo thành công bản code mới nhất!',
-          logs: outputLogs
-        });
+        }, 800);
       }
     });
   }
