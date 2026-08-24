@@ -384,6 +384,8 @@ class MySQLDatabaseEngine {
             p.post_title AS name,
             p.post_type AS post_type,
             p.post_parent AS post_parent,
+            p.post_content AS post_content,
+            p.post_excerpt AS post_excerpt,
             p.post_date AS created_at,
             MAX(CASE WHEN pm.meta_key = '_sku' THEN pm.meta_value END) AS code,
             MAX(CASE WHEN pm.meta_key = '_regular_price' THEN CAST(NULLIF(REPLACE(pm.meta_value, ',', ''), '') AS DECIMAL(15,2)) END) AS original_price,
@@ -395,7 +397,7 @@ class MySQLDatabaseEngine {
             MAX(CASE WHEN pm.meta_key = '_app_points' THEN CAST(NULLIF(REPLACE(pm.meta_value, ',', ''), '') AS SIGNED) END) AS points
           FROM ${prefix}posts p
           LEFT JOIN ${prefix}postmeta pm ON p.ID = pm.post_id
-          WHERE p.post_type IN ('product', 'product_variation') AND p.post_status IN ('publish', 'private')
+          WHERE p.post_type IN ('product', 'product_variation', 'post') AND p.post_status IN ('publish', 'private', 'inherit')
           GROUP BY p.ID
           ORDER BY p.post_date DESC
         `);
@@ -404,8 +406,9 @@ class MySQLDatabaseEngine {
           const [cats] = await this.pool.query(`
             SELECT tr.object_id AS product_id, t.name AS category_name
             FROM ${prefix}term_relationships tr
-            JOIN ${prefix}term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id AND tt.taxonomy = 'product_cat'
+            JOIN ${prefix}term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
             JOIN ${prefix}terms t ON tt.term_id = t.term_id
+            WHERE tt.taxonomy IN ('product_cat', 'category')
           `);
           const catMap = {};
           (cats || []).forEach(c => { catMap[c.product_id] = c.category_name; });
@@ -441,10 +444,20 @@ class MySQLDatabaseEngine {
             }
           });
 
-          // Main products list
-          const mainProducts = wpRows.filter(r => r.post_type === 'product');
+          function parsePriceFromText(text) {
+            if (!text) return 0;
+            const match = text.match(/([0-9]{1,3}(?:\.[0-9]{3})+|[0-9]{4,7})\s*(?:đ|vnd|vnđ)/i);
+            if (match) {
+              const raw = match[1].replace(/\./g, '');
+              return parseFloat(raw) || 0;
+            }
+            return 0;
+          }
 
-          wpProdList = mainProducts.map(r => {
+          // All products and relevant post items from WordPress database
+          const candidateProducts = wpRows.filter(r => r.post_type === 'product' || (r.post_type === 'post' && (r.selling_price > 0 || r.original_price > 0 || parsePriceFromText(r.post_content) > 0)));
+
+          wpProdList = candidateProducts.map(r => {
             let rawSelling = parseFloat(r.selling_price || 0);
             let rawReg = parseFloat(r.original_price || 0);
             let rawSale = parseFloat(r.promo_price || 0);
@@ -456,9 +469,17 @@ class MySQLDatabaseEngine {
               rawSale = varPrices[r.id].sale;
             }
 
+            // Fallback to text price extraction if meta price is 0
+            if (rawSelling === 0 && rawReg === 0) {
+              const textPrice = parsePriceFromText(r.post_content) || parsePriceFromText(r.post_excerpt);
+              if (textPrice > 0) {
+                rawSelling = textPrice;
+                rawReg = textPrice;
+              }
+            }
+
             const orig = rawReg > 0 ? rawReg : (rawSelling > 0 ? rawSelling : rawSale);
             const promo = (rawSale > 0 && rawSale < orig) ? rawSale : 0;
-            // Precedence: Promo price first if valid, then active selling price, then original price
             const effSelling = promo > 0 ? promo : (rawSelling > 0 ? rawSelling : orig);
 
             const isOutOfStock = r.stock_status === 'outofstock';
@@ -483,7 +504,7 @@ class MySQLDatabaseEngine {
               unit: 'Cây',
               imageUrl: imageUrl
             };
-          });
+          }).filter(p => p.name && p.name.trim().length > 0);
         }
       } catch (err) {
         console.error('Lỗi khi đọc bảng WordPress wp_posts:', err.message);
