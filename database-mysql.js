@@ -360,6 +360,7 @@ class MySQLDatabaseEngine {
       }
       return false;
     } catch (e) {
+      console.error('⚠️ checkWordPressTables error:', e.message);
       return false;
     }
   }
@@ -405,13 +406,7 @@ class MySQLDatabaseEngine {
             MAX(CASE WHEN pm.meta_key = '_app_points' THEN pm.meta_value END) AS raw_points
           FROM ${prefix}posts p
           LEFT JOIN ${prefix}postmeta pm ON p.ID = pm.post_id
-          WHERE (p.post_type IN ('product', 'product_variation') OR p.ID IN (
-            SELECT tr.object_id 
-            FROM ${prefix}term_relationships tr 
-            JOIN ${prefix}term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id 
-            WHERE tt.taxonomy = 'product_cat'
-          ))
-          AND p.post_status != 'trash'
+          WHERE p.post_type IN ('product', 'product_variation') AND p.post_status NOT IN ('trash', 'auto-draft')
           GROUP BY p.ID
           ORDER BY p.post_date DESC
         `);
@@ -470,25 +465,27 @@ class MySQLDatabaseEngine {
             }
           });
 
-          // All products (main products, product variations with titles, or product_cat items)
-          const candidateProducts = wpRows.filter(r => r.post_type === 'product' || (r.post_type === 'product_variation' && r.name && r.name !== 'Variations') || catMap[r.id]);
+          // All WooCommerce products (main products or variations with custom titles)
+          const candidateProducts = wpRows.filter(r => r.post_type === 'product' || (r.post_type === 'product_variation' && r.name && r.name.trim().length > 0 && r.name !== 'Variations'));
 
           wpProdList = candidateProducts.map(r => {
-            let rawSelling = parseWpPrice(r.raw_price);
-            let rawReg = parseWpPrice(r.raw_regular_price);
-            let rawSale = parseWpPrice(r.raw_sale_price);
+            const rawSelling = parseWpPrice(r.raw_price);
+            const rawReg = parseWpPrice(r.raw_regular_price);
+            const rawSale = parseWpPrice(r.raw_sale_price);
 
-            // Fallback to variation price if main product has no price
-            if (rawSelling === 0 && rawReg === 0 && varPrices[r.id]) {
-              rawSelling = varPrices[r.id].selling;
-              rawReg = varPrices[r.id].reg;
-              rawSale = varPrices[r.id].sale;
+            let effSelling = 0;
+            if (rawSale > 0) {
+              effSelling = rawSale;
+            } else if (rawSelling > 0) {
+              effSelling = rawSelling;
+            } else if (rawReg > 0) {
+              effSelling = rawReg;
+            } else if (varPrices[r.id] && varPrices[r.id].selling > 0) {
+              effSelling = varPrices[r.id].selling;
             }
 
-            const orig = rawReg > 0 ? rawReg : (rawSelling > 0 ? rawSelling : rawSale);
-            const promo = (rawSale > 0 && rawSale < orig) ? rawSale : (rawSale > 0 ? rawSale : 0);
-            // Strict priority: Sale Price > Active Selling Price > Regular Price
-            const effSelling = promo > 0 ? promo : (rawSelling > 0 ? rawSelling : orig);
+            const orig = rawReg > 0 ? rawReg : (rawSelling > 0 ? rawSelling : effSelling);
+            const promo = rawSale > 0 ? rawSale : effSelling;
 
             const isOutOfStock = r.stock_status === 'outofstock';
             const rawStock = parseInt(r.raw_stock !== null && r.raw_stock !== undefined && !isNaN(r.raw_stock) ? r.raw_stock : (isOutOfStock ? 0 : 9999));
@@ -502,8 +499,8 @@ class MySQLDatabaseEngine {
               name: r.name,
               category: catMap[r.id] || 'Cây Giống',
               costPrice: Math.round(effSelling * 0.5),
-              originalPrice: orig || effSelling,
-              promoPrice: promo || effSelling,
+              originalPrice: orig,
+              promoPrice: promo,
               sellingPrice: effSelling,
               stock: stock,
               reserved: 0,
