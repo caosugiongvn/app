@@ -405,7 +405,13 @@ class MySQLDatabaseEngine {
             MAX(CASE WHEN pm.meta_key = '_app_points' THEN CAST(NULLIF(REPLACE(pm.meta_value, ',', ''), '') AS SIGNED) END) AS points
           FROM ${prefix}posts p
           LEFT JOIN ${prefix}postmeta pm ON p.ID = pm.post_id
-          WHERE p.post_type IN ('product', 'product_variation') AND p.post_status IN ('publish', 'private', 'inherit')
+          WHERE (p.post_type IN ('product', 'product_variation') OR p.ID IN (
+            SELECT tr.object_id 
+            FROM ${prefix}term_relationships tr 
+            JOIN ${prefix}term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id 
+            WHERE tt.taxonomy = 'product_cat'
+          ))
+          AND p.post_status != 'trash'
           GROUP BY p.ID
           ORDER BY p.post_date DESC
         `);
@@ -451,8 +457,8 @@ class MySQLDatabaseEngine {
             }
           });
 
-          // Filter strictly WooCommerce products ONLY
-          const candidateProducts = wpRows.filter(r => r.post_type === 'product');
+          // All products (main products, product variations with titles, or product_cat items)
+          const candidateProducts = wpRows.filter(r => r.post_type === 'product' || (r.post_type === 'product_variation' && r.name && r.name !== 'Variations') || catMap[r.id]);
 
           wpProdList = candidateProducts.map(r => {
             let rawSelling = parseFloat(r.selling_price || 0);
