@@ -316,13 +316,13 @@ class MySQLDatabaseEngine {
             p.post_title AS name,
             p.post_date AS created_at,
             MAX(CASE WHEN pm.meta_key = '_sku' THEN pm.meta_value END) AS code,
-            MAX(CASE WHEN pm.meta_key = '_regular_price' THEN pm.meta_value END) AS original_price,
-            MAX(CASE WHEN pm.meta_key = '_sale_price' THEN pm.meta_value END) AS promo_price,
-            MAX(CASE WHEN pm.meta_key = '_price' THEN pm.meta_value END) AS selling_price,
-            MAX(CASE WHEN pm.meta_key = '_stock' THEN pm.meta_value END) AS stock,
+            MAX(CASE WHEN pm.meta_key = '_regular_price' THEN CAST(NULLIF(pm.meta_value, '') AS DECIMAL(15,2)) END) AS original_price,
+            MAX(CASE WHEN pm.meta_key = '_sale_price' THEN CAST(NULLIF(pm.meta_value, '') AS DECIMAL(15,2)) END) AS promo_price,
+            MAX(CASE WHEN pm.meta_key = '_price' THEN CAST(NULLIF(pm.meta_value, '') AS DECIMAL(15,2)) END) AS selling_price,
+            MAX(CASE WHEN pm.meta_key = '_stock' THEN CAST(NULLIF(pm.meta_value, '') AS SIGNED) END) AS stock,
             MAX(CASE WHEN pm.meta_key = '_stock_status' THEN pm.meta_value END) AS stock_status,
             MAX(CASE WHEN pm.meta_key = '_thumbnail_id' THEN pm.meta_value END) AS thumbnail_id,
-            MAX(CASE WHEN pm.meta_key = '_app_points' THEN pm.meta_value END) AS points
+            MAX(CASE WHEN pm.meta_key = '_app_points' THEN CAST(NULLIF(pm.meta_value, '') AS SIGNED) END) AS points
           FROM wp_posts p
           LEFT JOIN wp_postmeta pm ON p.ID = pm.post_id
           WHERE p.post_type IN ('product', 'product_variation') AND p.post_status IN ('publish', 'private')
@@ -355,10 +355,10 @@ class MySQLDatabaseEngine {
 
             const orig = rawReg > 0 ? rawReg : (rawSelling > 0 ? rawSelling : rawSale);
             const promo = (rawSale > 0 && rawSale < orig) ? rawSale : 0;
-            const effSelling = promo > 0 ? promo : (rawSelling > 0 ? rawSelling : orig);
+            const effSelling = rawSelling > 0 ? rawSelling : (promo > 0 ? promo : orig);
 
             const isOutOfStock = r.stock_status === 'outofstock';
-            const rawStock = parseInt(r.stock !== null && r.stock !== undefined && r.stock !== '' ? r.stock : (isOutOfStock ? 0 : 9999));
+            const rawStock = parseInt(r.stock !== null && r.stock !== undefined && !isNaN(r.stock) ? r.stock : (isOutOfStock ? 0 : 9999));
             const stock = isOutOfStock ? 0 : Math.max(1, rawStock);
             const imageUrl = r.thumbnail_id && imgMap[r.thumbnail_id] ? imgMap[r.thumbnail_id] : null;
 
