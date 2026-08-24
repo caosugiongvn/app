@@ -3,10 +3,54 @@ const fs = require('fs');
 const path = require('path');
 const config = require('./config');
 
+/**
+ * Tự động đọc file wp-config.php trên VPS nếu ứng dụng nằm trong/cạnh thư mục WordPress
+ */
+function getWordPressConfig() {
+  const possiblePaths = [
+    path.join(__dirname, '../wp-config.php'),
+    path.join(__dirname, '../../wp-config.php'),
+    '/www/wwwroot/danchigialai.com/wp-config.php'
+  ];
+
+  for (const wpPath of possiblePaths) {
+    if (fs.existsSync(wpPath)) {
+      try {
+        const content = fs.readFileSync(wpPath, 'utf8');
+        const dbNameMatch = content.match(/define\(\s*['"]DB_NAME['"]\s*,\s*['"]([^'"]+)['"]\s*\)/i);
+        const dbUserMatch = content.match(/define\(\s*['"]DB_USER['"]\s*,\s*['"]([^'"]+)['"]\s*\)/i);
+        const dbPassMatch = content.match(/define\(\s*['"]DB_PASSWORD['"]\s*,\s*['"]([^'"]+)['"]\s*\)/i);
+        const dbHostMatch = content.match(/define\(\s*['"]DB_HOST['"]\s*,\s*['"]([^'"]+)['"]\s*\)/i);
+        const prefixMatch = content.match(/\$table_prefix\s*=\s*['"]([^'"]+)['"]/i);
+
+        if (dbNameMatch && dbNameMatch[1]) {
+          const rawHost = dbHostMatch ? dbHostMatch[1] : '127.0.0.1';
+          const hostParts = rawHost.split(':');
+          const host = hostParts[0] === 'localhost' ? '127.0.0.1' : hostParts[0];
+          const port = hostParts[1] ? parseInt(hostParts[1], 10) : 3306;
+
+          return {
+            database: dbNameMatch[1],
+            user: dbUserMatch ? dbUserMatch[1] : 'root',
+            password: dbPassMatch ? dbPassMatch[1] : '',
+            host: host,
+            port: port,
+            prefix: prefixMatch ? prefixMatch[1] : 'wp_'
+          };
+        }
+      } catch (e) {
+        console.error('⚠️ Lỗi đọc wp-config.php:', e.message);
+      }
+    }
+  }
+  return null;
+}
+
 class MySQLDatabaseEngine {
   constructor() {
     this.pool = null;
     this.initialized = false;
+    this.wpPrefix = 'wp_';
   }
 
   /**
@@ -16,19 +60,39 @@ class MySQLDatabaseEngine {
     if (this.initialized && this.pool) return true;
 
     try {
+      const wpCfg = getWordPressConfig();
+      const dbConfig = wpCfg ? {
+        host: wpCfg.host,
+        port: wpCfg.port,
+        user: wpCfg.user,
+        password: wpCfg.password,
+        database: wpCfg.database
+      } : config.MYSQL_CONFIG;
+
+      this.wpPrefix = wpCfg ? wpCfg.prefix : 'wp_';
+
+      if (wpCfg) {
+        console.log(`🔗 Đã tự động phát hiện CSDL WordPress live trên VPS: database = "${wpCfg.database}", prefix = "${this.wpPrefix}"`);
+      }
+
       // 1. Kết nối với MySQL Server (không chỉ định database trước) để tạo DB nếu chưa có
       const tempConnection = await mysql.createConnection({
-        host: config.MYSQL_CONFIG.host,
-        port: config.MYSQL_CONFIG.port,
-        user: config.MYSQL_CONFIG.user,
-        password: config.MYSQL_CONFIG.password
+        host: dbConfig.host,
+        port: dbConfig.port,
+        user: dbConfig.user,
+        password: dbConfig.password
       });
 
-      await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${config.MYSQL_CONFIG.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
+      await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${dbConfig.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
       await tempConnection.end();
 
-      // 2. Tạo Pool kết nối chính thức vào database `smart_inventory`
-      this.pool = mysql.createPool(config.MYSQL_CONFIG);
+      // 2. Tạo Pool kết nối chính thức vào database CSDL
+      this.pool = mysql.createPool({
+        ...dbConfig,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0
+      });
 
       // 3. Đọc và thực thi schema.sql để tạo bảng & dữ liệu mẫu nếu bảng chưa tồn tại
       const schemaPath = path.join(__dirname, 'schema.sql');
@@ -282,7 +346,8 @@ class MySQLDatabaseEngine {
   async checkWordPressTables() {
     try {
       if (!this.pool) return false;
-      const [rows] = await this.pool.query("SHOW TABLES LIKE 'wp_posts'");
+      const prefix = this.wpPrefix || 'wp_';
+      const [rows] = await this.pool.query(`SHOW TABLES LIKE '${prefix}posts'`);
       return rows && rows.length > 0;
     } catch (e) {
       return false;
@@ -291,14 +356,16 @@ class MySQLDatabaseEngine {
 
   async updateWpPostMeta(postId, metaKey, metaValue) {
     try {
-      const [rows] = await this.pool.query('SELECT meta_id FROM wp_postmeta WHERE post_id = ? AND meta_key = ?', [postId, metaKey]);
+      const prefix = this.wpPrefix || 'wp_';
+      const valStr = metaValue !== undefined && metaValue !== null ? String(metaValue) : '';
+      const [rows] = await this.pool.query(`SELECT meta_id FROM ${prefix}postmeta WHERE post_id = ? AND meta_key = ?`, [postId, metaKey]);
       if (rows && rows.length > 0) {
-        await this.pool.query('UPDATE wp_postmeta SET meta_value = ? WHERE post_id = ? AND meta_key = ?', [String(metaValue), postId, metaKey]);
+        await this.pool.query(`UPDATE ${prefix}postmeta SET meta_value = ? WHERE post_id = ? AND meta_key = ?`, [valStr, postId, metaKey]);
       } else {
-        await this.pool.query('INSERT INTO wp_postmeta (post_id, meta_key, meta_value) VALUES (?, ?, ?)', [postId, metaKey, String(metaValue)]);
+        await this.pool.query(`INSERT INTO ${prefix}postmeta (post_id, meta_key, meta_value) VALUES (?, ?, ?)`, [postId, metaKey, valStr]);
       }
     } catch (e) {
-      console.error(`Lỗi cập nhật wp_postmeta (post ${postId}, key ${metaKey}):`, e.message);
+      console.error(`Lỗi cập nhật postmeta (post ${postId}, key ${metaKey}):`, e.message);
     }
   }
 
@@ -310,21 +377,22 @@ class MySQLDatabaseEngine {
     let wpProdList = [];
     if (hasWP) {
       try {
+        const prefix = this.wpPrefix || 'wp_';
         const [wpRows] = await this.pool.query(`
           SELECT 
             p.ID AS id,
             p.post_title AS name,
             p.post_date AS created_at,
             MAX(CASE WHEN pm.meta_key = '_sku' THEN pm.meta_value END) AS code,
-            MAX(CASE WHEN pm.meta_key = '_regular_price' THEN CAST(NULLIF(pm.meta_value, '') AS DECIMAL(15,2)) END) AS original_price,
-            MAX(CASE WHEN pm.meta_key = '_sale_price' THEN CAST(NULLIF(pm.meta_value, '') AS DECIMAL(15,2)) END) AS promo_price,
-            MAX(CASE WHEN pm.meta_key = '_price' THEN CAST(NULLIF(pm.meta_value, '') AS DECIMAL(15,2)) END) AS selling_price,
-            MAX(CASE WHEN pm.meta_key = '_stock' THEN CAST(NULLIF(pm.meta_value, '') AS SIGNED) END) AS stock,
+            MAX(CASE WHEN pm.meta_key = '_regular_price' THEN CAST(NULLIF(REPLACE(pm.meta_value, ',', ''), '') AS DECIMAL(15,2)) END) AS original_price,
+            MAX(CASE WHEN pm.meta_key = '_sale_price' THEN CAST(NULLIF(REPLACE(pm.meta_value, ',', ''), '') AS DECIMAL(15,2)) END) AS promo_price,
+            MAX(CASE WHEN pm.meta_key = '_price' THEN CAST(NULLIF(REPLACE(pm.meta_value, ',', ''), '') AS DECIMAL(15,2)) END) AS selling_price,
+            MAX(CASE WHEN pm.meta_key = '_stock' THEN CAST(NULLIF(REPLACE(pm.meta_value, ',', ''), '') AS SIGNED) END) AS stock,
             MAX(CASE WHEN pm.meta_key = '_stock_status' THEN pm.meta_value END) AS stock_status,
             MAX(CASE WHEN pm.meta_key = '_thumbnail_id' THEN pm.meta_value END) AS thumbnail_id,
-            MAX(CASE WHEN pm.meta_key = '_app_points' THEN CAST(NULLIF(pm.meta_value, '') AS SIGNED) END) AS points
-          FROM wp_posts p
-          LEFT JOIN wp_postmeta pm ON p.ID = pm.post_id
+            MAX(CASE WHEN pm.meta_key = '_app_points' THEN CAST(NULLIF(REPLACE(pm.meta_value, ',', ''), '') AS SIGNED) END) AS points
+          FROM ${prefix}posts p
+          LEFT JOIN ${prefix}postmeta pm ON p.ID = pm.post_id
           WHERE p.post_type IN ('product', 'product_variation') AND p.post_status IN ('publish', 'private')
           GROUP BY p.ID
           ORDER BY p.post_date DESC
@@ -333,16 +401,16 @@ class MySQLDatabaseEngine {
         if (wpRows && wpRows.length > 0) {
           const [cats] = await this.pool.query(`
             SELECT tr.object_id AS product_id, t.name AS category_name
-            FROM wp_term_relationships tr
-            JOIN wp_term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id AND tt.taxonomy = 'product_cat'
-            JOIN wp_terms t ON tt.term_id = t.term_id
+            FROM ${prefix}term_relationships tr
+            JOIN ${prefix}term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id AND tt.taxonomy = 'product_cat'
+            JOIN ${prefix}terms t ON tt.term_id = t.term_id
           `);
           const catMap = {};
           (cats || []).forEach(c => { catMap[c.product_id] = c.category_name; });
 
           const [imgRows] = await this.pool.query(`
             SELECT p.ID, p.guid 
-            FROM wp_posts p 
+            FROM ${prefix}posts p 
             WHERE p.post_type = 'attachment'
           `);
           const imgMap = {};
