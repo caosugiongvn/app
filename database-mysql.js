@@ -497,6 +497,8 @@ class MySQLDatabaseEngine {
       } catch (err) {
         console.error('Lỗi khi đọc bảng WordPress wp_posts:', err.message);
       }
+    }
+
     if (wpProdList.length > 0) {
       return wpProdList;
     }
