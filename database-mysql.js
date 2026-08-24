@@ -382,6 +382,8 @@ class MySQLDatabaseEngine {
           SELECT 
             p.ID AS id,
             p.post_title AS name,
+            p.post_type AS post_type,
+            p.post_parent AS post_parent,
             p.post_date AS created_at,
             MAX(CASE WHEN pm.meta_key = '_sku' THEN pm.meta_value END) AS code,
             MAX(CASE WHEN pm.meta_key = '_regular_price' THEN CAST(NULLIF(REPLACE(pm.meta_value, ',', ''), '') AS DECIMAL(15,2)) END) AS original_price,
@@ -416,14 +418,48 @@ class MySQLDatabaseEngine {
           const imgMap = {};
           (imgRows || []).forEach(img => { imgMap[img.ID] = img.guid; });
 
-          wpProdList = wpRows.map(r => {
-            const rawSelling = parseFloat(r.selling_price || 0);
-            const rawReg = parseFloat(r.original_price || 0);
-            const rawSale = parseFloat(r.promo_price || 0);
+          // Map variation prices by parent product ID
+          const varPrices = {};
+          wpRows.filter(r => r.post_type === 'product_variation' && r.post_parent > 0).forEach(v => {
+            const vSelling = parseFloat(v.selling_price || 0);
+            const vReg = parseFloat(v.original_price || 0);
+            const vSale = parseFloat(v.promo_price || 0);
+            const pId = v.post_parent;
+
+            if (!varPrices[pId]) {
+              varPrices[pId] = { selling: vSelling, reg: vReg, sale: vSale };
+            } else {
+              if (vSelling > 0 && (varPrices[pId].selling === 0 || vSelling < varPrices[pId].selling)) {
+                varPrices[pId].selling = vSelling;
+              }
+              if (vReg > 0 && (varPrices[pId].reg === 0 || vReg < varPrices[pId].reg)) {
+                varPrices[pId].reg = vReg;
+              }
+              if (vSale > 0 && (varPrices[pId].sale === 0 || vSale < varPrices[pId].sale)) {
+                varPrices[pId].sale = vSale;
+              }
+            }
+          });
+
+          // Main products list
+          const mainProducts = wpRows.filter(r => r.post_type === 'product');
+
+          wpProdList = mainProducts.map(r => {
+            let rawSelling = parseFloat(r.selling_price || 0);
+            let rawReg = parseFloat(r.original_price || 0);
+            let rawSale = parseFloat(r.promo_price || 0);
+
+            // Fallback to variation price if main product has no price
+            if (rawSelling === 0 && rawReg === 0 && varPrices[r.id]) {
+              rawSelling = varPrices[r.id].selling;
+              rawReg = varPrices[r.id].reg;
+              rawSale = varPrices[r.id].sale;
+            }
 
             const orig = rawReg > 0 ? rawReg : (rawSelling > 0 ? rawSelling : rawSale);
             const promo = (rawSale > 0 && rawSale < orig) ? rawSale : 0;
-            const effSelling = rawSelling > 0 ? rawSelling : (promo > 0 ? promo : orig);
+            // Precedence: Promo price first if valid, then active selling price, then original price
+            const effSelling = promo > 0 ? promo : (rawSelling > 0 ? rawSelling : orig);
 
             const isOutOfStock = r.stock_status === 'outofstock';
             const rawStock = parseInt(r.stock !== null && r.stock !== undefined && !isNaN(r.stock) ? r.stock : (isOutOfStock ? 0 : 9999));
