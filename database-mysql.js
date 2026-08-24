@@ -367,27 +367,40 @@ class MySQLDatabaseEngine {
     try {
       if (!this.pool) return false;
 
-      // 1. Ưu tiên kiểm tra tiền tố mặc định từ wp-config.php (nếu cả prefix_posts và prefix_postmeta đều tồn tại)
-      const pref = this.wpPrefix || 'wp_';
-      const [testP] = await this.pool.query(`SHOW TABLES LIKE '${pref}posts'`);
-      const [testM] = await this.pool.query(`SHOW TABLES LIKE '${pref}postmeta'`);
-      if (testP && testP.length > 0 && testM && testM.length > 0) {
-        return true;
+      // Danh sách các tiền tố cần thử (bỏ qua toàn bộ bảng plugin aioseo, yoast...)
+      const candidatePrefixes = [
+        this.wpPrefix,
+        'wp_',
+        'wpx_'
+      ].filter(p => p && !p.includes('aioseo') && !p.includes('yoast'));
+
+      // 1. Thử trực tiếp tìm bảng chứa sản phẩm WooCommerce (post_type = 'product')
+      for (const pref of candidatePrefixes) {
+        try {
+          const [rows] = await this.pool.query(`SELECT 1 FROM ${pref}posts WHERE post_type = 'product' LIMIT 1`);
+          if (rows && rows.length > 0) {
+            this.wpPrefix = pref;
+            console.log(`🎯 [WP Core Engine] Đã xác định chuẩn xác bảng sản phẩm WooCommerce gốc: "${this.wpPrefix}posts"`);
+            return true;
+          }
+        } catch (e) {}
       }
 
-      // 2. Nếu không khớp, tự động quét bảng postmeta của WordPress (bỏ qua bảng plugin như aioseo, yoast...)
-      const [allTables] = await this.pool.query("SHOW TABLES LIKE '%postmeta'");
+      // 2. Quét tất cả các bảng kết thúc bằng 'posts' (bỏ qua plugin)
+      const [allTables] = await this.pool.query("SHOW TABLES LIKE '%posts'");
       if (allTables && allTables.length > 0) {
         for (const row of allTables) {
           const tableName = Object.values(row)[0];
-          if (tableName && tableName.endsWith('postmeta') && !tableName.includes('aioseo') && !tableName.includes('yoast')) {
-            const calculatedPrefix = tableName.slice(0, -8); // Cắt bỏ chữ 'postmeta'
-            const [checkPosts] = await this.pool.query(`SHOW TABLES LIKE '${calculatedPrefix}posts'`);
-            if (checkPosts && checkPosts.length > 0) {
-              this.wpPrefix = calculatedPrefix;
-              console.log(`✅ [WP Engine] Đã xác định chính xác tiền tố CSDL WordPress: "${this.wpPrefix}" (khớp cả posts và postmeta)`);
-              return true;
-            }
+          if (tableName && tableName.endsWith('posts') && !tableName.includes('aioseo') && !tableName.includes('yoast')) {
+            const calculatedPrefix = tableName.slice(0, -5);
+            try {
+              const [check] = await this.pool.query(`SELECT 1 FROM ${calculatedPrefix}posts WHERE post_type = 'product' LIMIT 1`);
+              if (check && check.length > 0) {
+                this.wpPrefix = calculatedPrefix;
+                console.log(`🎯 [WP Core Engine] Đã xác định chuẩn xác bảng sản phẩm WooCommerce gốc: "${this.wpPrefix}posts"`);
+                return true;
+              }
+            } catch (e) {}
           }
         }
       }
