@@ -184,20 +184,18 @@ const CTVView = {
     const searchTerm = this.priceSearchInput ? this.priceSearchInput.value.toLowerCase().trim() : '';
     const selectedCat = this.priceCategorySelect ? this.priceCategorySelect.value : 'ALL';
 
-    // Filter out out-of-stock products (available <= 0) and filter by search/category
+    // Filter products by search and category (Do not hide out-of-stock items)
     const filtered = products.filter(p => {
-      const available = p.stock - p.reserved;
-      const isAvailable = available > 0;
       const matchSearch = p.name.toLowerCase().includes(searchTerm) || (p.code && p.code.toLowerCase().includes(searchTerm));
       const matchCat = selectedCat === 'ALL' || p.category === selectedCat;
-      return isAvailable && matchSearch && matchCat;
+      return matchSearch && matchCat;
     });
 
     if (filtered.length === 0) {
       this.priceGrid.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: var(--text-secondary);">
           <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
-          <p style="font-size: 14px; font-weight: 600; margin: 0;">Không tìm thấy sản phẩm phù hợp còn hàng</p>
+          <p style="font-size: 14px; font-weight: 600; margin: 0;">Không tìm thấy sản phẩm phù hợp trong danh mục này</p>
         </div>
       `;
       return;

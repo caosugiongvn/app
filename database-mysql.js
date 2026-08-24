@@ -321,10 +321,11 @@ class MySQLDatabaseEngine {
             MAX(CASE WHEN pm.meta_key = '_price' THEN pm.meta_value END) AS selling_price,
             MAX(CASE WHEN pm.meta_key = '_stock' THEN pm.meta_value END) AS stock,
             MAX(CASE WHEN pm.meta_key = '_stock_status' THEN pm.meta_value END) AS stock_status,
+            MAX(CASE WHEN pm.meta_key = '_thumbnail_id' THEN pm.meta_value END) AS thumbnail_id,
             MAX(CASE WHEN pm.meta_key = '_app_points' THEN pm.meta_value END) AS points
           FROM wp_posts p
           LEFT JOIN wp_postmeta pm ON p.ID = pm.post_id
-          WHERE p.post_type = 'product' AND p.post_status = 'publish'
+          WHERE p.post_type IN ('product', 'product_variation') AND p.post_status IN ('publish', 'private')
           GROUP BY p.ID
           ORDER BY p.post_date DESC
         `);
@@ -339,13 +340,27 @@ class MySQLDatabaseEngine {
           const catMap = {};
           (cats || []).forEach(c => { catMap[c.product_id] = c.category_name; });
 
+          const [imgRows] = await this.pool.query(`
+            SELECT p.ID, p.guid 
+            FROM wp_posts p 
+            WHERE p.post_type = 'attachment'
+          `);
+          const imgMap = {};
+          (imgRows || []).forEach(img => { imgMap[img.ID] = img.guid; });
+
           wpProdList = wpRows.map(r => {
-            const orig = parseFloat(r.original_price || r.selling_price || 0);
-            const promo = parseFloat(r.promo_price || 0);
-            const effSelling = promo > 0 ? promo : (parseFloat(r.selling_price || 0) || orig);
-            const rawStock = parseInt(r.stock !== null && r.stock !== undefined && r.stock !== '' ? r.stock : 999);
-            const isOutOfStock = r.stock_status === 'outofstock' || rawStock <= 0;
-            const stock = isOutOfStock ? 0 : rawStock;
+            const rawSelling = parseFloat(r.selling_price || 0);
+            const rawReg = parseFloat(r.original_price || 0);
+            const rawSale = parseFloat(r.promo_price || 0);
+
+            const orig = rawReg > 0 ? rawReg : (rawSelling > 0 ? rawSelling : rawSale);
+            const promo = (rawSale > 0 && rawSale < orig) ? rawSale : 0;
+            const effSelling = promo > 0 ? promo : (rawSelling > 0 ? rawSelling : orig);
+
+            const isOutOfStock = r.stock_status === 'outofstock';
+            const rawStock = parseInt(r.stock !== null && r.stock !== undefined && r.stock !== '' ? r.stock : (isOutOfStock ? 0 : 9999));
+            const stock = isOutOfStock ? 0 : Math.max(1, rawStock);
+            const imageUrl = r.thumbnail_id && imgMap[r.thumbnail_id] ? imgMap[r.thumbnail_id] : null;
 
             return {
               id: `wp-${r.id}`,
@@ -361,7 +376,8 @@ class MySQLDatabaseEngine {
               reserved: 0,
               available: stock,
               points: parseInt(r.points || Math.round(effSelling / 10000)),
-              unit: 'Cây'
+              unit: 'Cây',
+              imageUrl: imageUrl
             };
           });
         }

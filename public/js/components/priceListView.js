@@ -224,13 +224,8 @@ class PriceListView {
         });
       }
 
-      // Filter products: Hide out-of-stock items (available <= 0) and filter by search & category tab
-      let filteredProds = products.filter(p => {
-        const stockVal = Number(p.stock !== undefined ? p.stock : 9999);
-        const reservedVal = Number(p.reserved || 0);
-        const available = p.available !== undefined ? Number(p.available) : (stockVal - reservedVal);
-        return available > 0;
-      });
+      // Filter products by search & category tab (Do not hide out-of-stock items, display out-of-stock badge instead)
+      let filteredProds = products;
 
       if (this.searchQuery) {
         const q = this.searchQuery.toLowerCase().trim();
@@ -265,14 +260,19 @@ class PriceListView {
                   const effSelling = p.sellingPrice || (promo > 0 ? promo : orig);
                   const hasPromo = promo > 0 && promo < orig;
                   const commissionVnd = (p.points || 0) * standardPointVal;
+                  const stockVal = Number(p.stock !== undefined ? p.stock : 9999);
+                  const reservedVal = Number(p.reserved || 0);
+                  const available = p.available !== undefined ? Number(p.available) : (stockVal - reservedVal);
+                  const isOutOfStock = available <= 0;
 
                   return `
-                  <div class="glass-card" style="padding: 14px; display: flex; flex-direction: column; justify-content: space-between; border: ${hasPromo ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--border-glass)'}; position: relative;">
+                  <div class="glass-card" style="padding: 14px; display: flex; flex-direction: column; justify-content: space-between; border: ${hasPromo ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--border-glass)'}; position: relative; ${isOutOfStock ? 'opacity: 0.8;' : ''}">
                     <div>
                       <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; align-items: center; flex-wrap: wrap; gap: 4px;">
                         <div style="display: flex; gap: 4px; align-items: center;">
                           <span class="badge badge-secondary">${p.code || 'SP'}</span>
                           ${hasPromo ? '<span class="badge badge-danger" style="font-size: 10px; font-weight: 800; padding: 2px 6px;">🔥 KM</span>' : ''}
+                          ${isOutOfStock ? '<span class="badge badge-warning" style="font-size: 10px; font-weight: 800; padding: 2px 6px; background: rgba(239, 68, 68, 0.2); color: #ef4444;">🚫 Hết Hàng</span>' : ''}
                         </div>
                         <span class="badge badge-success" style="font-weight: 700;" title="${p.points || 0} điểm tích lũy">
                           🎁 +${commissionVnd.toLocaleString()} đ HH
@@ -287,7 +287,7 @@ class PriceListView {
                       <div style="margin-bottom: 10px;">
                         <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
                           <span style="font-size: 17px; font-weight: 800; color: ${hasPromo ? 'var(--success)' : 'var(--accent-primary)'};">
-                            ${effSelling.toLocaleString()} đ
+                            ${effSelling > 0 ? effSelling.toLocaleString() + ' đ' : 'Liên hệ báo giá'}
                           </span>
                           ${hasPromo ? `
                             <span style="font-size: 12px; text-decoration: line-through; color: var(--text-muted);">
@@ -298,8 +298,8 @@ class PriceListView {
                       </div>
                     </div>
 
-                    <button class="btn btn-primary btn-quick-buy-item" data-name="${p.name}" style="width: 100%; font-weight: 600; justify-content: center; font-size: 12px; padding: 8px 10px;">
-                      🛒 Mua Hàng / Yêu Cầu Tư Vấn
+                    <button class="btn ${isOutOfStock ? 'btn-secondary' : 'btn-primary'} btn-quick-buy-item" data-name="${p.name}" ${isOutOfStock ? 'disabled style="opacity: 0.65; cursor: not-allowed;"' : ''} style="width: 100%; font-weight: 600; justify-content: center; font-size: 12px; padding: 8px 10px;">
+                      ${isOutOfStock ? '🚫 Tạm Hết Hàng' : '🛒 Mua Hàng / Yêu Cầu Tư Vấn'}
                     </button>
                   </div>
                 `;}).join('')}
