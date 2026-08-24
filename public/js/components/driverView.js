@@ -215,7 +215,8 @@ const DriverView = {
   },
 
   render(state) {
-    const { orders, drivers, currentUser } = state;
+    this.container = document.getElementById('driver-orders-container');
+    const { orders, currentUser } = state;
     if (!this.ordersGrid) return;
 
     const isUserDriver = currentUser && currentUser.role === 'DRIVER';

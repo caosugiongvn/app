@@ -182,6 +182,7 @@ const InventoryView = {
   },
 
   render(state) {
+    this.tableBody = document.getElementById('inventory-table-body');
     const { products, currentUser } = state;
     if (!this.tableBody) return;
 
@@ -198,11 +199,14 @@ const InventoryView = {
       return;
     }
 
+    const standardPointVal = window.store?.state?.commissionSettings?.standardPointValue || 500;
+
     this.tableBody.innerHTML = products.map(p => {
       const available = p.stock - (p.reserved || 0);
       const origPrice = p.originalPrice || p.sellingPrice || 0;
       const promoPrice = p.promoPrice || 0;
       const effSelling = p.sellingPrice || (promoPrice > 0 ? promoPrice : origPrice);
+      const commVnd = (p.points || 0) * standardPointVal;
 
       const imgCell = p.imageUrl
         ? `<img src="${p.imageUrl}" alt="${p.name}" class="product-table-thumb" onerror="this.outerHTML='<div class=\\'product-table-thumb-empty\\'>🌿</div>';">`
@@ -232,7 +236,7 @@ const InventoryView = {
               ${available > 0 ? '✅' : '⚠️'} ${available} ${p.unit || 'Cái'}
             </span>
           </td>
-          <td style="color: var(--success); font-weight: 700;">+${p.points || 0} pts</td>
+          <td style="color: var(--success); font-weight: 700;">+${commVnd.toLocaleString()} đ <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">(${p.points || 0} pts)</span></td>
           <td>
             <button class="btn btn-primary btn-sm" title="${isAdmin ? 'Chỉnh sửa tất cả thông tin sản phẩm này' : 'Đăng nhập Admin để chỉnh sửa'}" onclick="InventoryView.openEditModal('${p.id}')">
               ✏️ Sửa Tất Cả

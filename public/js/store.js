@@ -51,27 +51,25 @@ class AppStore {
   }
 
   async fetchAll() {
-    const [productsRes, ctvsRes, driversRes, regionsRes, ordersRes, dashboardRes, leaderboardRes, quickPurchasesRes, commissionRes] = await Promise.all([
-      window.API.getProducts(),
-      window.API.getCtvs(),
-      window.API.getDrivers(),
-      window.API.getRegions(),
-      window.API.getOrders(),
-      window.API.getDashboardReport(),
-      window.API.getLeaderboard(this.state.selectedRegion),
-      window.API.getQuickPurchases(),
-      window.API.getCommissionSettings()
-    ]);
+    const safeFetch = async (apiCall, defaultVal = []) => {
+      try {
+        const res = await apiCall();
+        if (res && res.success && res.data !== undefined) return res.data;
+      } catch (e) {
+        console.warn('⚠️ SafeFetch error:', e.message);
+      }
+      return defaultVal;
+    };
 
-    if (productsRes.success) this.state.products = productsRes.data;
-    if (ctvsRes.success) this.state.ctvs = ctvsRes.data;
-    if (driversRes && driversRes.success) this.state.drivers = driversRes.data;
-    if (regionsRes.success) this.state.regions = regionsRes.data;
-    if (ordersRes.success) this.state.orders = ordersRes.data;
-    if (dashboardRes.success) this.state.dashboardReport = dashboardRes.data;
-    if (leaderboardRes && leaderboardRes.success) this.state.leaderboard = leaderboardRes.data;
-    if (quickPurchasesRes && quickPurchasesRes.success) this.state.quickPurchases = quickPurchasesRes.data;
-    if (commissionRes && commissionRes.success) this.state.commissionSettings = commissionRes.data;
+    this.state.products = await safeFetch(() => window.API.getProducts(), this.state.products);
+    this.state.ctvs = await safeFetch(() => window.API.getCtvs(), this.state.ctvs);
+    this.state.drivers = await safeFetch(() => window.API.getDrivers(), this.state.drivers);
+    this.state.regions = await safeFetch(() => window.API.getRegions(), this.state.regions);
+    this.state.orders = await safeFetch(() => window.API.getOrders(), this.state.orders);
+    this.state.dashboardReport = await safeFetch(() => window.API.getDashboardReport(), this.state.dashboardReport);
+    this.state.leaderboard = await safeFetch(() => window.API.getLeaderboard(this.state.selectedRegion), this.state.leaderboard);
+    this.state.quickPurchases = await safeFetch(() => window.API.getQuickPurchases(), this.state.quickPurchases);
+    this.state.commissionSettings = await safeFetch(() => window.API.getCommissionSettings(), this.state.commissionSettings);
 
     this.notify();
   }

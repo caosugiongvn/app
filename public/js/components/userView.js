@@ -144,6 +144,8 @@ class UserView {
   }
 
   async render() {
+    this.container = document.getElementById('users-table-container');
+    this.commissionContainer = document.getElementById('commission-live-table-container');
     const state = window.store ? window.store.state : null;
     if (state) {
       this.renderCommissionTable(state);

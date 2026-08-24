@@ -52,9 +52,10 @@ const API = {
   updateUserRoleAndRegion(userId, role, region) { return this.request('/auth/users/role-region', 'PUT', { userId, role, region }); },
 
   // --- QUICK PURCHASE APIS (MUA HÀNG NHANH & SĐT KHÁCH) ---
-  createQuickPurchase(data) { return this.request('/quick-purchases', 'POST', data); },
   getQuickPurchases() { return this.request('/quick-purchases'); },
-  updateQuickPurchaseStatus(id, status) { return this.request(`/quick-purchases/${id}/status`, 'PUT', { status }); },
+  addQuickPurchase(data) { return this.request('/quick-purchases', 'POST', data); },
+  createQuickPurchase(data) { return this.request('/quick-purchases', 'POST', data); },
+  updateQuickPurchaseStatus(id, statusData) { return this.request(`/quick-purchases/${id}/status`, 'PUT', typeof statusData === 'string' ? { status: statusData } : statusData); },
   deleteQuickPurchase(id) { return this.request(`/quick-purchases/${id}`, 'DELETE'); },
 
   // --- SYSTEM & VPS SYNC APIS ---

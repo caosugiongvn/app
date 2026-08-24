@@ -109,14 +109,17 @@ const CTVView = {
     row.style.gap = '8px';
     row.style.alignItems = 'center';
 
+    const standardPointVal = window.store?.state?.commissionSettings?.standardPointValue || 500;
+
     row.innerHTML = `
       <select class="form-select item-prod-select" style="flex: 2;" required>
         <option value="">-- Chọn sản phẩm --</option>
-        ${products.map(p => {
+        ${products.filter(p => (p.stock - p.reserved) > 0).map(p => {
           const available = p.stock - p.reserved;
           const selected = String(p.id) === String(productId) ? 'selected' : '';
+          const commVnd = (p.points || 0) * standardPointVal;
           return `<option value="${p.id}" ${selected} data-price="${p.sellingPrice}" data-points="${p.points}" data-available="${available}">
-            ${p.name} (${p.sellingPrice.toLocaleString()}đ)
+            ${p.name} (${p.sellingPrice.toLocaleString()}đ | HH: +${commVnd.toLocaleString()}đ)
           </option>`;
         }).join('')}
       </select>
@@ -166,6 +169,7 @@ const CTVView = {
   renderPriceList(products) {
     if (!this.priceGrid) return;
     products = products || [];
+    const standardPointVal = window.store?.state?.commissionSettings?.standardPointValue || 500;
 
     if (this.priceCategorySelect && this.priceCategorySelect.children.length <= 1) {
       const categories = Array.from(new Set(products.map(p => p.category || 'Chung')));
@@ -180,35 +184,33 @@ const CTVView = {
     const searchTerm = this.priceSearchInput ? this.priceSearchInput.value.toLowerCase().trim() : '';
     const selectedCat = this.priceCategorySelect ? this.priceCategorySelect.value : 'ALL';
 
+    // Filter out out-of-stock products (available <= 0) and filter by search/category
     const filtered = products.filter(p => {
+      const available = p.stock - p.reserved;
+      const isAvailable = available > 0;
       const matchSearch = p.name.toLowerCase().includes(searchTerm) || (p.code && p.code.toLowerCase().includes(searchTerm));
       const matchCat = selectedCat === 'ALL' || p.category === selectedCat;
-      return matchSearch && matchCat;
+      return isAvailable && matchSearch && matchCat;
     });
 
     if (filtered.length === 0) {
       this.priceGrid.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: var(--text-secondary);">
           <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
-          <p style="font-size: 14px; font-weight: 600; margin: 0;">Không tìm thấy sản phẩm phù hợp</p>
+          <p style="font-size: 14px; font-weight: 600; margin: 0;">Không tìm thấy sản phẩm phù hợp còn hàng</p>
         </div>
       `;
       return;
     }
 
     this.priceGrid.innerHTML = filtered.map(p => {
-      const available = p.stock - p.reserved;
-      const isAvailable = available > 0;
-      const stockBadge = isAvailable
-        ? `<span class="badge badge-success" style="font-size: 10px; padding: 2px 6px;">Kho: ${available}</span>`
-        : `<span class="badge badge-danger" style="font-size: 10px; padding: 2px 6px;">Hết hàng</span>`;
-
       const imgHtml = p.imageUrl 
         ? `<img src="${p.imageUrl}" alt="${p.name}" class="product-card-img" onerror="this.outerHTML='<div class=\\'product-img-fallback\\'>📦</div>';">`
         : `<div class="product-img-fallback">🌿</div>`;
 
       const origPrice = p.originalPrice || 0;
       const hasDiscount = origPrice > (p.sellingPrice || 0);
+      const commVnd = (p.points || 0) * standardPointVal;
 
       return `
         <div class="product-card">
@@ -218,9 +220,6 @@ const CTVView = {
                 <span style="font-size: 10px; font-weight: 700; color: var(--accent-primary); background: rgba(99, 102, 241, 0.25); backdrop-filter: blur(4px); padding: 2px 8px; border-radius: 6px;">
                   ${p.code || 'SP'}
                 </span>
-              </div>
-              <div class="product-stock-overlay">
-                ${stockBadge}
               </div>
               ${imgHtml}
             </div>
@@ -234,15 +233,15 @@ const CTVView = {
           </div>
 
           <div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; flex-wrap: wrap; gap: 4px;">
               <div>
                 ${hasDiscount ? `<div style="font-size: 11px; color: var(--text-muted); text-decoration: line-through;">${origPrice.toLocaleString()} đ</div>` : ''}
                 <div style="font-size: 16px; font-weight: 800; color: var(--success); font-family: 'Outfit', sans-serif;">
                   ${(p.sellingPrice || 0).toLocaleString()} đ
                 </div>
               </div>
-              <span class="badge badge-info" style="font-size: 11px; font-weight: 700;">
-                +${p.points || 0} pts
+              <span class="badge badge-success" style="font-size: 11px; font-weight: 700;" title="${p.points || 0} pts">
+                🎁 +${commVnd.toLocaleString()} đ HH
               </span>
             </div>
             <button type="button" class="btn btn-sm btn-primary btn-add-ctv-order" data-id="${p.id}" data-name="${p.name}" style="width: 100%; font-size: 12px; padding: 8px; justify-content: center; font-weight: 700;">
@@ -263,6 +262,7 @@ const CTVView = {
   calculatePreviews() {
     let total = 0;
     let points = 0;
+    const standardPointVal = window.store?.state?.commissionSettings?.standardPointValue || 500;
 
     const rows = document.querySelectorAll('.order-item-row');
     rows.forEach(row => {
@@ -280,8 +280,9 @@ const CTVView = {
       }
     });
 
+    const commVndTotal = points * standardPointVal;
     if (this.totalPreview) this.totalPreview.textContent = total.toLocaleString() + ' đ';
-    if (this.pointsPreview) this.pointsPreview.textContent = `+${points} pts`;
+    if (this.pointsPreview) this.pointsPreview.textContent = `+${commVndTotal.toLocaleString()} đ hoa hồng (${points} pts)`;
   },
 
   async handleCreateOrder(e) {
@@ -352,6 +353,10 @@ const CTVView = {
   },
 
   render(state) {
+    this.priceGrid = document.getElementById('ctv-pricelist-grid');
+    this.ctvSelect = document.getElementById('order-ctv-select');
+    this.driverSelect = document.getElementById('order-driver-select');
+    this.ordersContainer = document.getElementById('ctv-orders-container');
     const { ctvs, drivers, orders, currentUser, products } = state;
 
     // 1. Render Product Price Quotes catalog inside CTV view

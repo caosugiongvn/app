@@ -169,7 +169,7 @@ class AuthModal {
     const phone = document.getElementById('login-phone')?.value;
     const password = document.getElementById('login-password')?.value;
 
-    const res = await window.API.login({ phone, password });
+    const res = await window.API.login(phone, password);
 
     if (res.success) {
       alert(res.message);

@@ -66,6 +66,7 @@ class PriceListView {
   }
 
   render() {
+    this.approvalContainer = document.getElementById('pricelist-approval-container');
     const state = window.store.state;
     const { orders, drivers, currentUser, leaderboard, regions } = state;
 
@@ -170,21 +171,32 @@ class PriceListView {
 
       const products = state.products || [];
       const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
+      const standardPointVal = state.commissionSettings?.standardPointValue || 500;
+
+      if (!this.selectedCategory) this.selectedCategory = 'ALL';
 
       if (headerCard) {
         headerCard.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
             <div>
               <h2 style="font-size: 18px; font-weight: 700; color: var(--accent-primary);">🏷️ Tra Cứu Báo Giá Sản Phẩm & Mua Hàng Nhanh</h2>
               <p style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;">Bấm <strong>"🛒 Mua Hàng Nhanh"</strong> để gửi SĐT tư vấn hoặc Đăng Ký CTV để mua với giá chiết khấu ưu đãi.</p>
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-              <input type="text" id="guest-price-search" class="form-control" placeholder="🔍 Tìm theo tên hoặc mã SP..." style="font-size: 13px; padding: 6px 12px; min-width: 170px;" value="${this.searchQuery || ''}">
-              <select id="guest-price-category" class="form-select" style="font-size: 13px; padding: 6px 12px; min-width: 140px;">
-                <option value="ALL">📁 Tất cả danh mục</option>
-                ${categories.map(c => `<option value="${c}" ${this.selectedCategory === c ? 'selected' : ''}>${c}</option>`).join('')}
-              </select>
+              <input type="text" id="guest-price-search" class="form-control" placeholder="🔍 Tìm theo tên hoặc mã SP..." style="font-size: 13px; padding: 6px 12px; min-width: 200px;" value="${this.searchQuery || ''}">
             </div>
+          </div>
+
+          <!-- CATEGORY TABS BAR -->
+          <div class="category-tabs-container">
+            <button class="category-tab-btn ${this.selectedCategory === 'ALL' ? 'active' : ''}" data-cat="ALL">
+              📁 Tất cả danh mục
+            </button>
+            ${categories.map(c => `
+              <button class="category-tab-btn ${this.selectedCategory === c ? 'active' : ''}" data-cat="${c}">
+                🌿 ${c}
+              </button>
+            `).join('')}
           </div>
         `;
 
@@ -196,17 +208,21 @@ class PriceListView {
           };
         }
 
-        const categorySelect = document.getElementById('guest-price-category');
-        if (categorySelect) {
-          categorySelect.onchange = (e) => {
-            this.selectedCategory = e.target.value;
+        const tabBtns = headerCard.querySelectorAll('.category-tab-btn');
+        tabBtns.forEach(btn => {
+          btn.onclick = () => {
+            this.selectedCategory = btn.dataset.cat;
             this.render();
           };
-        }
+        });
       }
 
-      // Filter products
-      let filteredProds = products;
+      // Filter products: Hide out-of-stock items (available <= 0) and filter by search & category tab
+      let filteredProds = products.filter(p => {
+        const available = p.available !== undefined ? p.available : (p.stock - (p.reserved || 0));
+        return available > 0;
+      });
+
       if (this.searchQuery) {
         const q = this.searchQuery.toLowerCase().trim();
         filteredProds = filteredProds.filter(p => (p.name && p.name.toLowerCase().includes(q)) || (p.code && p.code.toLowerCase().includes(q)));
@@ -229,7 +245,7 @@ class PriceListView {
 
             ${filteredProds.length === 0 ? `
               <div style="text-align: center; padding: 40px; color: var(--text-muted);" class="glass-card">
-                Không tìm thấy sản phẩm nào khớp với tìm kiếm.
+                Không tìm thấy sản phẩm nào phù hợp trong danh mục này.
               </div>
             ` : `
               <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px;">
@@ -238,16 +254,19 @@ class PriceListView {
                   const promo = p.promoPrice || 0;
                   const effSelling = p.sellingPrice || (promo > 0 ? promo : orig);
                   const hasPromo = promo > 0 && promo < orig;
+                  const commissionVnd = (p.points || 0) * standardPointVal;
 
                   return `
                   <div class="glass-card" style="padding: 14px; display: flex; flex-direction: column; justify-content: space-between; border: ${hasPromo ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--border-glass)'}; position: relative;">
                     <div>
-                      <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; align-items: center;">
+                      <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; align-items: center; flex-wrap: wrap; gap: 4px;">
                         <div style="display: flex; gap: 4px; align-items: center;">
                           <span class="badge badge-secondary">${p.code || 'SP'}</span>
                           ${hasPromo ? '<span class="badge badge-danger" style="font-size: 10px; font-weight: 800; padding: 2px 6px;">🔥 KM</span>' : ''}
                         </div>
-                        <span class="badge badge-success">+${p.points || 0} pts</span>
+                        <span class="badge badge-success" style="font-weight: 700;" title="${p.points || 0} điểm tích lũy">
+                          🎁 +${commissionVnd.toLocaleString()} đ HH
+                        </span>
                       </div>
                       <div style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin-bottom: 4px; line-height: 1.3;">
                         ${p.name}
@@ -265,9 +284,6 @@ class PriceListView {
                               ${orig.toLocaleString()} đ
                             </span>
                           ` : ''}
-                        </div>
-                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
-                          Tồn kho: ${p.available !== undefined ? p.available : p.stock} ${p.unit || 'Cái'}
                         </div>
                       </div>
                     </div>
@@ -287,13 +303,16 @@ class PriceListView {
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
                 <div>
                   <h3 style="font-size: 16px; font-weight: 700;">🏆 Bảng Xếp Hạng CTV</h3>
-                  <p style="font-size: 12px; color: var(--text-secondary); margin: 0;">Top điểm tích lũy & doanh số</p>
+                  <p style="font-size: 12px; color: var(--text-secondary); margin: 0;">Top hoa hồng tích lũy & doanh số</p>
                 </div>
               </div>
 
               <div class="leaderboard-list">
                 ${topCtvs.length === 0 ? '<div style="color: var(--text-muted); font-size: 12px;">Chưa có dữ liệu xếp hạng.</div>' : topCtvs.slice(0, 5).map((ctv, idx) => {
                   let rankClass = idx === 0 ? 'rank-1' : idx === 1 ? 'rank-2' : idx === 2 ? 'rank-3' : 'rank-normal';
+                  const ctvPointVal = ctv.pointValue || (idx === 0 ? (state.commissionSettings?.topPointValue || 1000) : standardPointVal);
+                  const ctvEstComm = ctv.estimatedCommission !== undefined ? ctv.estimatedCommission : ((ctv.points || 0) * ctvPointVal);
+
                   return `
                     <div class="leaderboard-item" style="padding: 10px 12px; margin-bottom: 8px;">
                       <div style="display: flex; align-items: center; gap: 10px;">
@@ -304,7 +323,8 @@ class PriceListView {
                         </div>
                       </div>
                       <div style="text-align: right;">
-                        <div style="font-weight: 700; color: var(--success); font-size: 13px;">+${ctv.points} pts</div>
+                        <div style="font-weight: 700; color: var(--success); font-size: 13px;">+${(ctvEstComm || 0).toLocaleString()} đ</div>
+                        <div style="font-size: 10px; color: var(--text-muted);">${ctv.points} pts</div>
                       </div>
                     </div>
                   `;

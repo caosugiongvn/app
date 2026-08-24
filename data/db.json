@@ -1,58 +1,6 @@
 {
   "products": [
     {
-      "id": "prod-1",
-      "code": "SP001",
-      "name": "Tai nghe không dây Premium Pro",
-      "category": "Điện tử",
-      "costPrice": 280000,
-      "sellingPrice": 550000,
-      "stock": 48,
-      "reserved": 0,
-      "points": 50,
-      "unit": "Cái",
-      "imageUrl": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80"
-    },
-    {
-      "id": "prod-2",
-      "code": "SP002",
-      "name": "Đồng hồ thông minh FitTrack",
-      "category": "Phụ kiện",
-      "costPrice": 450000,
-      "sellingPrice": 890000,
-      "stock": 29,
-      "reserved": 0,
-      "points": 80,
-      "unit": "Cái",
-      "imageUrl": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80"
-    },
-    {
-      "id": "prod-3",
-      "code": "SP003",
-      "name": "Sạc dự phòng Ultra Power 20.000mAh",
-      "category": "Điện tử",
-      "costPrice": 180000,
-      "sellingPrice": 380000,
-      "stock": 98,
-      "reserved": 0,
-      "points": 35,
-      "unit": "Cái",
-      "imageUrl": "https://images.unsplash.com/photo-1609592424109-dd9892f1b177?w=500&q=80"
-    },
-    {
-      "id": "prod-4",
-      "code": "SP004",
-      "name": "Bàn phím cơ không dây SlimRGB",
-      "category": "Máy tính",
-      "costPrice": 600000,
-      "sellingPrice": 1250000,
-      "stock": 17,
-      "reserved": 0,
-      "points": 120,
-      "unit": "Cái",
-      "imageUrl": "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&q=80"
-    },
-    {
       "id": "prod-1785857711089",
       "code": "CS001",
       "name": "Cây giống Cao Su 209 (Bầu 1 Tầng Lá)",
