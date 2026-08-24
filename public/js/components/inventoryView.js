@@ -218,15 +218,9 @@ const InventoryView = {
           <td>${imgCell}</td>
           <td style="font-weight: 600; min-width: 160px;">${p.name}</td>
           <td><span class="badge badge-secondary" style="font-size: 11px;">${p.category || 'Chung'}</span></td>
-          <td>${(p.costPrice || 0).toLocaleString()} đ</td>
-          <td style="font-weight: 600; color: var(--text-primary);">${origPrice.toLocaleString()} đ</td>
-          <td>
-            ${promoPrice > 0 
-              ? `<span style="color: var(--success); font-weight: 800;">🔥 ${promoPrice.toLocaleString()} đ</span>`
-              : `<span style="color: var(--text-muted); font-size: 12px;">Chưa cài</span>`
-            }
+          <td style="font-weight: 800; color: var(--success); font-size: 15px;">
+            ${effSelling > 0 ? effSelling.toLocaleString() + ' đ' : 'Liên hệ báo giá'}
           </td>
-          <td style="font-weight: 800; color: var(--accent-primary); font-size: 15px;">${effSelling.toLocaleString()} đ</td>
           <td style="font-weight: 700; color: var(--accent-secondary);">${p.stock || 0} ${p.unit || 'Cái'}</td>
           <td>
             <span class="badge badge-warning">⏳ ${p.reserved || 0} ${p.unit || 'Cái'}</span>

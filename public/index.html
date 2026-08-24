@@ -246,10 +246,7 @@
                   <th>Hình Ảnh</th>
                   <th>Tên Sản Phẩm</th>
                   <th>Danh Mục</th>
-                  <th>Giá Vốn</th>
-                  <th>Giá Niêm Yết</th>
-                  <th>Giá Khuyến Mãi</th>
-                  <th>Giá Áp Dụng</th>
+                  <th style="color: var(--success); font-size: 14px;">🏷️ Giá Khuyến Mãi (Web Database)</th>
                   <th>Tồn Thực Tế</th>
                   <th>Tạm Trừ (Giữ)</th>
                   <th>Tồn Khả Dụng</th>
@@ -628,6 +625,15 @@
           </div>
         </div>
 
+        <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+          <input type="hidden" id="new-prod-cost" value="0">
+          <input type="hidden" id="new-prod-original-price" value="0">
+          <div class="form-group">
+            <label class="form-label" style="font-weight: 700; color: var(--success); font-size: 14px;">🏷️ Giá Khuyến Mãi (đ)</label>
+            <input type="number" id="new-prod-promo-price" class="form-control" placeholder="Ví dụ: 16000" min="0" value="0">
+          </div>
+        </div>
+
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div class="form-group">
             <label class="form-label" style="font-weight: 600;">Danh Mục Sản Phẩm</label>
@@ -639,20 +645,7 @@
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-          <div class="form-group">
-            <label class="form-label" style="font-weight: 600;">Giá Vốn (đ) *</label>
-            <input type="number" id="new-prod-cost" class="form-control" placeholder="200000" min="0" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label" style="font-weight: 600; color: var(--accent-primary);">Giá Niêm Yết (đ)</label>
-            <input type="number" id="new-prod-original-price" class="form-control" placeholder="350000" min="0">
-          </div>
-          <div class="form-group">
-            <label class="form-label" style="font-weight: 600; color: var(--success);">Giá Khuyến Mãi (đ)</label>
-            <input type="number" id="new-prod-promo-price" class="form-control" placeholder="300000" min="0" value="0">
-          </div>
-        </div>
+
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div class="form-group">

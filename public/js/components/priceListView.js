@@ -286,14 +286,9 @@ class PriceListView {
                       </div>
                       <div style="margin-bottom: 10px;">
                         <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
-                          <span style="font-size: 17px; font-weight: 800; color: ${hasPromo ? 'var(--success)' : 'var(--accent-primary)'};">
-                            ${effSelling > 0 ? effSelling.toLocaleString() + ' đ' : 'Liên hệ báo giá'}
+                          <span style="font-size: 18px; font-weight: 800; color: var(--success);">
+                            🏷️ Giá Khuyến Mãi: ${effSelling > 0 ? effSelling.toLocaleString() + ' đ' : 'Liên hệ báo giá'}
                           </span>
-                          ${hasPromo ? `
-                            <span style="font-size: 12px; text-decoration: line-through; color: var(--text-muted);">
-                              ${orig.toLocaleString()} đ
-                            </span>
-                          ` : ''}
                         </div>
                       </div>
                     </div>

@@ -233,9 +233,8 @@ const CTVView = {
           <div>
             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; flex-wrap: wrap; gap: 4px;">
               <div>
-                ${hasDiscount ? `<div style="font-size: 11px; color: var(--text-muted); text-decoration: line-through;">${origPrice.toLocaleString()} đ</div>` : ''}
-                <div style="font-size: 16px; font-weight: 800; color: var(--success); font-family: 'Outfit', sans-serif;">
-                  ${(p.sellingPrice || 0).toLocaleString()} đ
+                <div style="font-size: 15px; font-weight: 800; color: var(--success); font-family: 'Outfit', sans-serif;">
+                  🏷️ Giá Khuyến Mãi: ${(p.sellingPrice || 0) > 0 ? (p.sellingPrice || 0).toLocaleString() + ' đ' : 'Liên hệ'}
                 </div>
               </div>
               <span class="badge badge-success" style="font-size: 11px; font-weight: 700;" title="${p.points || 0} pts">
