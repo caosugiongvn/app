@@ -366,13 +366,30 @@ class MySQLDatabaseEngine {
   async checkWordPressTables() {
     try {
       if (!this.pool) return false;
-      const [rows] = await this.pool.query("SHOW TABLES LIKE '%posts'");
-      if (rows && rows.length > 0) {
-        const tableName = Object.values(rows[0])[0];
-        if (tableName && tableName.endsWith('posts')) {
-          this.wpPrefix = tableName.slice(0, -5); // Extract prefix before 'posts'
-        }
+
+      // 1. Ưu tiên kiểm tra tiền tố mặc định từ wp-config.php (nếu cả prefix_posts và prefix_postmeta đều tồn tại)
+      const pref = this.wpPrefix || 'wp_';
+      const [testP] = await this.pool.query(`SHOW TABLES LIKE '${pref}posts'`);
+      const [testM] = await this.pool.query(`SHOW TABLES LIKE '${pref}postmeta'`);
+      if (testP && testP.length > 0 && testM && testM.length > 0) {
         return true;
+      }
+
+      // 2. Nếu không khớp, tự động quét bảng postmeta của WordPress (bỏ qua bảng plugin như aioseo, yoast...)
+      const [allTables] = await this.pool.query("SHOW TABLES LIKE '%postmeta'");
+      if (allTables && allTables.length > 0) {
+        for (const row of allTables) {
+          const tableName = Object.values(row)[0];
+          if (tableName && tableName.endsWith('postmeta') && !tableName.includes('aioseo') && !tableName.includes('yoast')) {
+            const calculatedPrefix = tableName.slice(0, -8); // Cắt bỏ chữ 'postmeta'
+            const [checkPosts] = await this.pool.query(`SHOW TABLES LIKE '${calculatedPrefix}posts'`);
+            if (checkPosts && checkPosts.length > 0) {
+              this.wpPrefix = calculatedPrefix;
+              console.log(`✅ [WP Engine] Đã xác định chính xác tiền tố CSDL WordPress: "${this.wpPrefix}" (khớp cả posts và postmeta)`);
+              return true;
+            }
+          }
+        }
       }
       return false;
     } catch (e) {
