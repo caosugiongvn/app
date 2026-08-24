@@ -265,9 +265,16 @@ class PriceListView {
                   const available = p.available !== undefined ? Number(p.available) : (stockVal - reservedVal);
                   const isOutOfStock = available <= 0;
 
+                  const imgThumbHtml = p.imageUrl
+                    ? `<div style="width: 100%; height: 140px; border-radius: 8px; overflow: hidden; margin-bottom: 10px; background: rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: center; position: relative;">
+                         <img src="${p.imageUrl}" alt="${p.name}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.outerHTML='<div style=\\'font-size: 38px;\\'>🌿</div>';">
+                       </div>`
+                    : `<div style="width: 100%; height: 100px; border-radius: 8px; background: rgba(16, 185, 129, 0.08); display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 10px;">🌿</div>`;
+
                   return `
                   <div class="glass-card" style="padding: 14px; display: flex; flex-direction: column; justify-content: space-between; border: ${hasPromo ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--border-glass)'}; position: relative; ${isOutOfStock ? 'opacity: 0.8;' : ''}">
                     <div>
+                      ${imgThumbHtml}
                       <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; align-items: center; flex-wrap: wrap; gap: 4px;">
                         <div style="display: flex; gap: 4px; align-items: center;">
                           <span class="badge badge-secondary">${p.code || 'SP'}</span>

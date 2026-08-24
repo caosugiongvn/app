@@ -449,6 +449,7 @@ class MySQLDatabaseEngine {
             MAX(CASE WHEN pm.meta_key = '_stock' THEN pm.meta_value END) AS raw_stock,
             MAX(CASE WHEN pm.meta_key = '_stock_status' THEN pm.meta_value END) AS stock_status,
             MAX(CASE WHEN pm.meta_key = '_thumbnail_id' THEN pm.meta_value END) AS thumbnail_id,
+            MAX(CASE WHEN pm.meta_key = '_product_image_gallery' THEN pm.meta_value END) AS gallery_ids,
             MAX(CASE WHEN pm.meta_key = '_app_points' THEN pm.meta_value END) AS raw_points
           FROM ${prefix}posts p
           LEFT JOIN ${prefix}postmeta pm ON p.ID = pm.post_id
@@ -467,13 +468,37 @@ class MySQLDatabaseEngine {
           const catMap = {};
           (cats || []).forEach(c => { catMap[c.product_id] = c.category_name; });
 
-          const [imgRows] = await this.pool.query(`
-            SELECT p.ID, p.guid 
-            FROM ${prefix}posts p 
-            WHERE p.post_type = 'attachment'
-          `);
+          // 1. Quét đường dẫn ảnh đính kèm từ wp_postmeta (_wp_attached_file)
           const imgMap = {};
-          (imgRows || []).forEach(img => { imgMap[img.ID] = img.guid; });
+          try {
+            const [imgMetaRows] = await this.pool.query(`
+              SELECT pm.post_id AS id, pm.meta_value AS file_path, p.guid AS guid
+              FROM ${prefix}postmeta pm
+              JOIN ${prefix}posts p ON pm.post_id = p.ID
+              WHERE pm.meta_key = '_wp_attached_file' AND p.post_type = 'attachment'
+            `);
+            (imgMetaRows || []).forEach(img => {
+              if (img.file_path) {
+                imgMap[img.id] = `https://danchigialai.com/wp-content/uploads/${img.file_path.replace(/^\/+/, '')}`;
+              } else if (img.guid) {
+                imgMap[img.id] = img.guid.replace(/^http:\/\/[^\/]+/i, 'https://danchigialai.com');
+              }
+            });
+          } catch (e) {}
+
+          // 2. Dự phòng quét cột guid trong bảng wp_posts cho các ảnh attachment
+          try {
+            const [imgRows] = await this.pool.query(`
+              SELECT p.ID, p.guid 
+              FROM ${prefix}posts p 
+              WHERE p.post_type = 'attachment'
+            `);
+            (imgRows || []).forEach(img => {
+              if (!imgMap[img.ID] && img.guid) {
+                imgMap[img.ID] = img.guid.replace(/^http:\/\/[^\/]+/i, 'https://danchigialai.com');
+              }
+            });
+          } catch (e) {}
 
           function parseWpPrice(val) {
             if (val === null || val === undefined) return 0;
@@ -536,7 +561,12 @@ class MySQLDatabaseEngine {
             const isOutOfStock = r.stock_status === 'outofstock';
             const rawStock = parseInt(r.raw_stock !== null && r.raw_stock !== undefined && !isNaN(r.raw_stock) ? r.raw_stock : (isOutOfStock ? 0 : 9999));
             const stock = isOutOfStock ? 0 : Math.max(1, rawStock);
-            const imageUrl = r.thumbnail_id && imgMap[r.thumbnail_id] ? imgMap[r.thumbnail_id] : null;
+            let thumbId = r.thumbnail_id;
+            if (!thumbId && r.gallery_ids) {
+              const ids = String(r.gallery_ids).split(',').map(s => s.trim()).filter(Boolean);
+              if (ids.length > 0) thumbId = ids[0];
+            }
+            const imageUrl = thumbId && imgMap[thumbId] ? imgMap[thumbId] : null;
 
             return {
               id: `wp-${r.id}`,
