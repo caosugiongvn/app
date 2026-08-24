@@ -10,36 +10,52 @@ function getWordPressConfig() {
   const possiblePaths = [
     path.join(__dirname, '../wp-config.php'),
     path.join(__dirname, '../../wp-config.php'),
-    '/www/wwwroot/danchigialai.com/wp-config.php'
+    '/www/wwwroot/danchigialai.com/wp-config.php',
+    '/www/wwwroot/wp-config.php'
   ];
 
   for (const wpPath of possiblePaths) {
     if (fs.existsSync(wpPath)) {
       try {
         const content = fs.readFileSync(wpPath, 'utf8');
-        const dbNameMatch = content.match(/define\(\s*['"]DB_NAME['"]\s*,\s*['"]([^'"]+)['"]\s*\)/i);
-        const dbUserMatch = content.match(/define\(\s*['"]DB_USER['"]\s*,\s*['"]([^'"]+)['"]\s*\)/i);
-        const dbPassMatch = content.match(/define\(\s*['"]DB_PASSWORD['"]\s*,\s*['"]([^'"]+)['"]\s*\)/i);
-        const dbHostMatch = content.match(/define\(\s*['"]DB_HOST['"]\s*,\s*['"]([^'"]+)['"]\s*\)/i);
-        const prefixMatch = content.match(/\$table_prefix\s*=\s*['"]([^'"]+)['"]/i);
 
-        if (dbNameMatch && dbNameMatch[1]) {
-          const rawHost = dbHostMatch ? dbHostMatch[1] : '127.0.0.1';
-          const hostParts = rawHost.split(':');
-          const host = hostParts[0] === 'localhost' ? '127.0.0.1' : hostParts[0];
-          const port = hostParts[1] ? parseInt(hostParts[1], 10) : 3306;
+        const getDefine = (key) => {
+          const regex = new RegExp(`define\\s*\\(\\s*['"]${key}['"]\\s*,\\s*['"]([^'"]*)['"]\\s*\\)`, 'i');
+          const m = content.match(regex);
+          return m ? m[1] : null;
+        };
+
+        const dbName = getDefine('DB_NAME');
+        const dbUser = getDefine('DB_USER');
+        const dbPass = getDefine('DB_PASSWORD');
+        const dbHostRaw = getDefine('DB_HOST') || '127.0.0.1';
+
+        const prefixMatch = content.match(/\$table_prefix\s*=\s*['"]([^'"]+)['"]/i);
+        const tablePrefix = prefixMatch ? prefixMatch[1] : 'wp_';
+
+        if (dbName && dbUser) {
+          let host = '127.0.0.1';
+          let port = 3306;
+
+          if (dbHostRaw.includes(':') && !dbHostRaw.includes('.sock')) {
+            const parts = dbHostRaw.split(':');
+            if (parts[0] !== 'localhost') host = parts[0];
+            port = parseInt(parts[1], 10) || 3306;
+          }
+
+          console.log(`✅ [WP Config Engine] Parsed wp-config.php: DB="${dbName}", User="${dbUser}", Host="${host}:${port}", Prefix="${tablePrefix}"`);
 
           return {
-            database: dbNameMatch[1],
-            user: dbUserMatch ? dbUserMatch[1] : 'root',
-            password: dbPassMatch ? dbPassMatch[1] : '',
+            database: dbName,
+            user: dbUser,
+            password: dbPass !== null ? dbPass : '',
             host: host,
             port: port,
-            prefix: prefixMatch ? prefixMatch[1] : 'wp_'
+            prefix: tablePrefix
           };
         }
-      } catch (e) {
-        console.error('⚠️ Lỗi đọc wp-config.php:', e.message);
+      } catch (err) {
+        console.error('⚠️ Lỗi khi đọc file wp-config.php:', err.message);
       }
     }
   }
@@ -510,15 +526,17 @@ class MySQLDatabaseEngine {
               imageUrl: imageUrl
             };
           }).filter(p => p.name && p.name.trim().length > 0);
+          console.log(`✅ [WP Database Engine] Successfully loaded ${wpProdList.length} WooCommerce products directly from live database!`);
         }
       } catch (err) {
-        console.error('Lỗi khi đọc bảng WordPress wp_posts:', err.message);
+        console.error('❌ Lỗi khi đọc bảng WordPress wp_posts:', err.message);
       }
     }
 
     if (wpProdList.length > 0) {
       return wpProdList;
     }
+    console.warn('⚠️ [WP Database Engine] Warning: No WordPress products loaded, checking local fallback...');
 
     let localProdList = [];
     try {
