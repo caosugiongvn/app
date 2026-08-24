@@ -25,8 +25,13 @@ app.use(express.urlencoded({ extended: true }));
 // Phục vụ các tệp tĩnh Frontend trong thư mục public
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Mount Central API Routes (MVC Architecture)
-app.use('/api', apiRoutes);
+// Mount Central API Routes with No-Cache Headers (MVC Architecture)
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+}, apiRoutes);
 
 // Phục vụ SPA index.html cho các route còn lại
 app.get('*', (req, res) => {
