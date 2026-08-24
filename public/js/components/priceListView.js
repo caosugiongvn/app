@@ -170,7 +170,8 @@ class PriceListView {
       }
 
       const products = state.products || [];
-      const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
+      const defaultCats = ['Cây Giống', 'Phân Bón', 'Thuốc BVTV', 'Vật Tư Nông Nghiệp'];
+      const categories = Array.from(new Set([...products.map(p => p.category).filter(Boolean), ...defaultCats]));
       const standardPointVal = state.commissionSettings?.standardPointValue || 500;
 
       if (!this.selectedCategory) this.selectedCategory = 'ALL';
@@ -192,11 +193,17 @@ class PriceListView {
             <button class="category-tab-btn ${this.selectedCategory === 'ALL' ? 'active' : ''}" data-cat="ALL">
               📁 Tất cả danh mục
             </button>
-            ${categories.map(c => `
-              <button class="category-tab-btn ${this.selectedCategory === c ? 'active' : ''}" data-cat="${c}">
-                🌿 ${c}
-              </button>
-            `).join('')}
+            ${categories.map(c => {
+              let icon = '🌿';
+              if (c.toLowerCase().includes('phân bón')) icon = '🧪';
+              if (c.toLowerCase().includes('thuốc')) icon = '🛡️';
+              if (c.toLowerCase().includes('vật tư')) icon = '📦';
+              return `
+                <button class="category-tab-btn ${this.selectedCategory === c ? 'active' : ''}" data-cat="${c}">
+                  ${icon} ${c}
+                </button>
+              `;
+            }).join('')}
           </div>
         `;
 
