@@ -75,16 +75,20 @@ class MySQLDatabaseEngine {
         console.log(`🔗 Đã tự động phát hiện CSDL WordPress live trên VPS: database = "${wpCfg.database}", prefix = "${this.wpPrefix}"`);
       }
 
-      // 1. Kết nối với MySQL Server (không chỉ định database trước) để tạo DB nếu chưa có
-      const tempConnection = await mysql.createConnection({
-        host: dbConfig.host,
-        port: dbConfig.port,
-        user: dbConfig.user,
-        password: dbConfig.password
-      });
+      // 1. Kết nối với MySQL Server để tạo DB (bỏ qua lỗi nếu user MySQL không có quyền CREATE DATABASE)
+      try {
+        const tempConnection = await mysql.createConnection({
+          host: dbConfig.host,
+          port: dbConfig.port,
+          user: dbConfig.user,
+          password: dbConfig.password
+        });
 
-      await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${dbConfig.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
-      await tempConnection.end();
+        await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${dbConfig.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
+        await tempConnection.end();
+      } catch (e) {
+        // Bỏ qua lỗi Access Denied khi user MySQL trên VPS không có quyền CREATE DATABASE
+      }
 
       // 2. Tạo Pool kết nối chính thức vào database CSDL
       this.pool = mysql.createPool({
