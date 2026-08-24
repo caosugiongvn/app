@@ -293,11 +293,100 @@ class MySQLDatabaseEngine {
     };
   }
 
+  // --- SHARED WORDPRESS DATABASE HELPERS ---
+  async checkWordPressTables() {
+    try {
+      if (!this.pool) return false;
+      const [rows] = await this.pool.query("SHOW TABLES LIKE 'wp_posts'");
+      return rows && rows.length > 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async updateWpPostMeta(postId, metaKey, metaValue) {
+    try {
+      const [rows] = await this.pool.query('SELECT meta_id FROM wp_postmeta WHERE post_id = ? AND meta_key = ?', [postId, metaKey]);
+      if (rows && rows.length > 0) {
+        await this.pool.query('UPDATE wp_postmeta SET meta_value = ? WHERE post_id = ? AND meta_key = ?', [String(metaValue), postId, metaKey]);
+      } else {
+        await this.pool.query('INSERT INTO wp_postmeta (post_id, meta_key, meta_value) VALUES (?, ?, ?)', [postId, metaKey, String(metaValue)]);
+      }
+    } catch (e) {
+      console.error(`Lỗi cập nhật wp_postmeta (post ${postId}, key ${metaKey}):`, e.message);
+    }
+  }
+
   // --- SẢN PHẨM & TỒN KHO ---
   async getProducts() {
     await this.initDatabase();
+    const hasWP = await this.checkWordPressTables();
+
+    let wpProdList = [];
+    if (hasWP) {
+      try {
+        const [wpRows] = await this.pool.query(`
+          SELECT 
+            p.ID AS id,
+            p.post_title AS name,
+            p.post_date AS created_at,
+            MAX(CASE WHEN pm.meta_key = '_sku' THEN pm.meta_value END) AS code,
+            MAX(CASE WHEN pm.meta_key = '_regular_price' THEN pm.meta_value END) AS original_price,
+            MAX(CASE WHEN pm.meta_key = '_sale_price' THEN pm.meta_value END) AS promo_price,
+            MAX(CASE WHEN pm.meta_key = '_price' THEN pm.meta_value END) AS selling_price,
+            MAX(CASE WHEN pm.meta_key = '_stock' THEN pm.meta_value END) AS stock,
+            MAX(CASE WHEN pm.meta_key = '_stock_status' THEN pm.meta_value END) AS stock_status,
+            MAX(CASE WHEN pm.meta_key = '_app_points' THEN pm.meta_value END) AS points
+          FROM wp_posts p
+          LEFT JOIN wp_postmeta pm ON p.ID = pm.post_id
+          WHERE p.post_type = 'product' AND p.post_status = 'publish'
+          GROUP BY p.ID
+          ORDER BY p.post_date DESC
+        `);
+
+        if (wpRows && wpRows.length > 0) {
+          const [cats] = await this.pool.query(`
+            SELECT tr.object_id AS product_id, t.name AS category_name
+            FROM wp_term_relationships tr
+            JOIN wp_term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id AND tt.taxonomy = 'product_cat'
+            JOIN wp_terms t ON tt.term_id = t.term_id
+          `);
+          const catMap = {};
+          (cats || []).forEach(c => { catMap[c.product_id] = c.category_name; });
+
+          wpProdList = wpRows.map(r => {
+            const orig = parseFloat(r.original_price || r.selling_price || 0);
+            const promo = parseFloat(r.promo_price || 0);
+            const effSelling = promo > 0 ? promo : (parseFloat(r.selling_price || 0) || orig);
+            const rawStock = parseInt(r.stock !== null && r.stock !== undefined && r.stock !== '' ? r.stock : 999);
+            const isOutOfStock = r.stock_status === 'outofstock' || rawStock <= 0;
+            const stock = isOutOfStock ? 0 : rawStock;
+
+            return {
+              id: `wp-${r.id}`,
+              wpId: r.id,
+              code: r.code || `WP-${r.id}`,
+              name: r.name,
+              category: catMap[r.id] || 'Cây Giống',
+              costPrice: Math.round(effSelling * 0.5),
+              originalPrice: orig || effSelling,
+              promoPrice: promo,
+              sellingPrice: effSelling,
+              stock: stock,
+              reserved: 0,
+              available: stock,
+              points: parseInt(r.points || Math.round(effSelling / 10000)),
+              unit: 'Cây'
+            };
+          });
+        }
+      } catch (err) {
+        console.error('Lỗi khi đọc bảng WordPress wp_posts:', err.message);
+      }
+    }
+
     const [rows] = await this.pool.query('SELECT *, (stock - reserved) AS available FROM products ORDER BY created_at DESC');
-    return rows.map(r => {
+    const localProdList = rows.map(r => {
       const orig = parseFloat(r.original_price || 0) || parseFloat(r.selling_price || 0);
       const promo = parseFloat(r.promo_price || 0);
       const effSelling = promo > 0 ? promo : (parseFloat(r.selling_price || 0) || orig);
@@ -317,6 +406,13 @@ class MySQLDatabaseEngine {
         unit: r.unit || 'Cái'
       };
     });
+
+    if (wpProdList.length > 0) {
+      // Direct shared database mode: Return WordPress products prioritized
+      return wpProdList;
+    }
+
+    return localProdList;
   }
 
   async addProduct(data) {
@@ -353,6 +449,25 @@ class MySQLDatabaseEngine {
   async importStock(productId, qty, note) {
     await this.initDatabase();
     const importQty = parseInt(qty);
+    const isWpProduct = String(productId).startsWith('wp-');
+    const wpId = isWpProduct ? String(productId).replace('wp-', '') : null;
+
+    if (isWpProduct && wpId) {
+      const hasWP = await this.checkWordPressTables();
+      if (hasWP) {
+        const [rows] = await this.pool.query('SELECT meta_value FROM wp_postmeta WHERE post_id = ? AND meta_key = "_stock"', [wpId]);
+        const currentStock = rows && rows.length > 0 ? parseInt(rows[0].meta_value || 0) : 0;
+        const newStock = Math.max(0, currentStock + importQty);
+
+        await this.updateWpPostMeta(wpId, '_stock', newStock);
+        await this.updateWpPostMeta(wpId, '_stock_status', newStock <= 0 ? 'outofstock' : 'instock');
+        await this.updateWpPostMeta(wpId, '_manage_stock', 'yes');
+
+        const products = await this.getProducts();
+        return products.find(p => p.id === productId) || null;
+      }
+    }
+
     await this.pool.query('UPDATE products SET stock = stock + ? WHERE id = ?', [importQty, productId]);
 
     const [prods] = await this.pool.query('SELECT * FROM products WHERE id = ?', [productId]);
@@ -361,23 +476,66 @@ class MySQLDatabaseEngine {
     await this.pool.query(
       `INSERT INTO stock_transactions (id, type, product_id, product_name, qty, note)
        VALUES (?, 'IMPORT', ?, ?, ?, ?)`,
-      [`tx-${Date.now()}`, productId, product.name, importQty, note || 'Nhập kho bổ sung']
+      [`tx-${Date.now()}`, productId, product ? product.name : productId, importQty, note || 'Nhập kho bổ sung']
     );
 
     return {
-      id: product.id,
-      code: product.code,
-      name: product.name,
-      stock: parseInt(product.stock),
-      reserved: parseInt(product.reserved),
-      available: parseInt(product.stock - product.reserved),
-      unit: product.unit
+      id: product ? product.id : productId,
+      code: product ? product.code : 'SP001',
+      name: product ? product.name : 'Sản phẩm',
+      stock: product ? parseInt(product.stock) : importQty,
+      reserved: product ? parseInt(product.reserved) : 0,
+      available: product ? parseInt(product.stock - product.reserved) : importQty,
+      unit: product ? product.unit : 'Cái'
     };
   }
 
   async updateProduct(id, updateData) {
     await this.initDatabase();
     if (!this.pool) return null;
+
+    const isWpProduct = String(id).startsWith('wp-');
+    const wpId = isWpProduct ? String(id).replace('wp-', '') : null;
+
+    if (isWpProduct && wpId) {
+      const hasWP = await this.checkWordPressTables();
+      if (hasWP) {
+        const { code, name, originalPrice, promoPrice, sellingPrice, stock, points } = updateData;
+
+        if (name) {
+          await this.pool.query('UPDATE wp_posts SET post_title = ? WHERE ID = ? AND post_type = "product"', [name, wpId]);
+        }
+
+        if (code) {
+          await this.updateWpPostMeta(wpId, '_sku', code);
+        }
+
+        if (sellingPrice !== undefined || originalPrice !== undefined || promoPrice !== undefined) {
+          const origPriceVal = originalPrice !== undefined ? parseFloat(originalPrice) : parseFloat(sellingPrice || 0);
+          const promoPriceVal = promoPrice !== undefined ? parseFloat(promoPrice) : 0;
+          const effPriceVal = promoPriceVal > 0 ? promoPriceVal : (parseFloat(sellingPrice || 0) || origPriceVal);
+
+          await this.updateWpPostMeta(wpId, '_price', effPriceVal);
+          await this.updateWpPostMeta(wpId, '_regular_price', origPriceVal);
+          await this.updateWpPostMeta(wpId, '_sale_price', promoPriceVal > 0 ? promoPriceVal : '');
+        }
+
+        if (stock !== undefined) {
+          const stk = parseInt(stock || 0);
+          await this.updateWpPostMeta(wpId, '_stock', stk);
+          await this.updateWpPostMeta(wpId, '_stock_status', stk <= 0 ? 'outofstock' : 'instock');
+          await this.updateWpPostMeta(wpId, '_manage_stock', 'yes');
+        }
+
+        if (points !== undefined) {
+          await this.updateWpPostMeta(wpId, '_app_points', parseInt(points || 0));
+        }
+
+        const prods = await this.getProducts();
+        return prods.find(p => p.id === id) || null;
+      }
+    }
+
     const { code, name, category, costPrice, originalPrice, promoPrice, sellingPrice, stock, points, unit } = updateData;
 
     const [existing] = await this.pool.query('SELECT * FROM products WHERE id = ?', [id]);
@@ -715,10 +873,27 @@ class MySQLDatabaseEngine {
       const [items] = await conn.query('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
 
       for (const item of items) {
-        await conn.query(
-          'UPDATE products SET stock = stock - ?, reserved = GREATEST(0, reserved - ?) WHERE id = ?',
-          [item.qty, item.qty, item.product_id]
-        );
+        const isWp = String(item.product_id).startsWith('wp-');
+        const wpId = isWp ? String(item.product_id).replace('wp-', '') : null;
+
+        if (isWp && wpId) {
+          try {
+            const [stkRows] = await conn.query('SELECT meta_value FROM wp_postmeta WHERE post_id = ? AND meta_key = "_stock"', [wpId]);
+            const curStk = stkRows && stkRows.length > 0 ? parseInt(stkRows[0].meta_value || 0) : 0;
+            const newStk = Math.max(0, curStk - item.qty);
+            await this.updateWpPostMeta(wpId, '_stock', newStk);
+            await this.updateWpPostMeta(wpId, '_stock_status', newStk <= 0 ? 'outofstock' : 'instock');
+          } catch (e) {
+            console.error('Lỗi trừ kho WordPress sản phẩm:', e.message);
+          }
+        }
+
+        try {
+          await conn.query(
+            'UPDATE products SET stock = stock - ?, reserved = GREATEST(0, reserved - ?) WHERE id = ?',
+            [item.qty, item.qty, item.product_id]
+          );
+        } catch (e) {}
 
         await conn.query(
           `INSERT INTO stock_transactions (id, type, product_id, product_name, qty, note)
