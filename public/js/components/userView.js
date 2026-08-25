@@ -43,7 +43,9 @@ class UserView {
     if (res.success) {
       alert(res.message);
       if (input) input.value = '';
-      window.store.fetchAll();
+      await this.fetchRegions();
+      await window.store.fetchAll();
+      await this.render();
     } else {
       alert(`⚠️ ${res.message}`);
     }
@@ -261,7 +263,9 @@ class UserView {
     const res = await window.API.renameRegion(oldName, newName.trim());
     if (res.success) {
       alert(res.message);
+      await this.fetchRegions();
       await window.store.fetchAll();
+      await this.render();
     } else {
       alert(`⚠️ ${res.message}`);
     }
@@ -276,7 +280,9 @@ class UserView {
     const res = await window.API.deleteRegion(name);
     if (res.success) {
       alert(res.message);
+      await this.fetchRegions();
       await window.store.fetchAll();
+      await this.render();
     } else {
       alert(`⚠️ ${res.message}`);
     }

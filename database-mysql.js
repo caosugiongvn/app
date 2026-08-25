@@ -151,6 +151,23 @@ class MySQLDatabaseEngine {
           `);
         } catch (e) {}
 
+        // Tự động đảm bảo tạo bảng regions nếu chưa có trong MySQL
+        try {
+          await this.pool.query(`
+            CREATE TABLE IF NOT EXISTS \`regions\` (
+              \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+              \`name\` VARCHAR(100) NOT NULL UNIQUE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+          `);
+          const [regCount] = await this.pool.query('SELECT COUNT(*) AS total FROM regions');
+          if (regCount[0]?.total === 0) {
+            await this.pool.query(`
+              INSERT IGNORE INTO regions (name) VALUES 
+              ('Hà Nội'), ('TP. Hồ Chí Minh'), ('Đà Nẵng'), ('Hải Phòng'), ('Cần Thơ'), ('Gia Lai');
+            `);
+          }
+        } catch (e) {}
+
         // Tự động đảm bảo tạo bảng commission_settings nếu chưa có trong MySQL
         try {
           await this.pool.query(`
