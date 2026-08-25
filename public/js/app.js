@@ -336,6 +336,7 @@ function initAppViews() {
             if (window.InventoryView && typeof window.InventoryView.render === 'function') window.InventoryView.render(state);
             if (window.CTVView && typeof window.CTVView.render === 'function') window.CTVView.render(state);
             if (window.DriverView && typeof window.DriverView.render === 'function') window.DriverView.render(state);
+            if (window.userView && typeof window.userView.render === 'function') window.userView.render();
         });
 
         window.store.fetchAll();

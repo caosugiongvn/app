@@ -951,13 +951,23 @@ class MySQLDatabaseEngine {
 
     const result = [];
     for (const r of rows) {
-      const [uRows] = await this.pool.query('SELECT COUNT(*) AS total FROM users WHERE region = ?', [r.name]);
-      const [oRows] = await this.pool.query('SELECT COUNT(*) AS total FROM orders WHERE ctv_region = ?', [r.name]);
+      let uCount = 0;
+      let oCount = 0;
+      try {
+        const [uRows] = await this.pool.query('SELECT COUNT(*) AS total FROM users WHERE region = ?', [r.name]);
+        uCount = uRows[0]?.total || 0;
+      } catch (e) {}
+
+      try {
+        const [oRows] = await this.pool.query('SELECT COUNT(*) AS total FROM orders WHERE ctv_region = ?', [r.name]);
+        oCount = oRows[0]?.total || 0;
+      } catch (e) {}
+
       result.push({
         id: r.id,
         name: r.name,
-        userCount: uRows[0]?.total || 0,
-        orderCount: oRows[0]?.total || 0
+        userCount: uCount,
+        orderCount: oCount
       });
     }
     return result;

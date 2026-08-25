@@ -175,6 +175,7 @@ class UserView {
   }
 
   async renderRegionsTable(state) {
+    this.regionsContainer = document.getElementById('regions-table-container');
     if (!this.regionsContainer) return;
     const { regions, users, orders } = state;
 
@@ -187,8 +188,9 @@ class UserView {
     } catch (e) {}
 
     if (regionList.length === 0) {
-      const names = (regions && regions.length > 0) ? regions : this.regions;
-      regionList = names.filter(n => n !== 'Chưa phân công').map((name, idx) => {
+      const names = (regions && regions.length > 0) ? regions : (this.regions || []);
+      const validNames = names.length > 0 ? names : ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ', 'Gia Lai'];
+      regionList = validNames.filter(n => n !== 'Chưa phân công').map((name, idx) => {
         const uCount = (users || []).filter(u => u.region === name).length;
         const oCount = (orders || []).filter(o => o.ctvRegion === name || o.ctv_region === name).length;
         return { id: idx + 1, name, userCount: uCount, orderCount: oCount };
