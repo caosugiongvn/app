@@ -484,6 +484,29 @@
             <!-- Rendered via JS -->
           </div>
         </div>
+
+        <!-- SECTION 3: QUẢN LÝ KHU VỰC BÁN HÀNG & GIAO HÀNG (REGION MANAGEMENT) -->
+        <div class="glass-card" style="margin-top: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+              <h2 style="font-size: 18px; font-weight: 700; color: var(--accent-primary);">📍 Quản Lý Khu Vực Bán Hàng & Giao Hàng</h2>
+              <p style="font-size: 13px; color: var(--text-secondary);">Thêm khu vực mới, thay đổi tên khu vực và tự động đồng bộ tất cả tài khoản/đơn hàng thuộc khu vực tương ứng</p>
+            </div>
+          </div>
+
+          <!-- Add Region Form -->
+          <form id="form-add-region" style="display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; background: rgba(255,255,255,0.03); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+            <input type="text" id="input-new-region-name" class="form-control" placeholder="Nhập tên khu vực mới (Ví dụ: Gia Lai, Đắk Lắk, Tây Nguyên...)" required style="flex: 1; min-width: 240px;">
+            <button type="submit" class="btn btn-primary" style="font-weight: 700; white-space: nowrap;">
+              ➕ Thêm Khu Vực Mới
+            </button>
+          </form>
+
+          <!-- Regions Live Table -->
+          <div id="regions-table-container" class="table-responsive">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
       </section>
 
       <!-- VIEW 6: FACEBOOK MESSENGER BOT INTEGRATION & CSKH AUTOMATION -->
@@ -1009,18 +1032,18 @@
   </div>
 
   <!-- JS Modules (Cache Busting Enforced) -->
-  <script src="js/api.js?v=20260824_v25_images"></script>
-  <script src="js/store.js?v=20260824_v25_images"></script>
-  <script src="js/components/priceListView.js?v=20260824_v25_images"></script>
-  <script src="js/components/dashboardView.js?v=20260824_v25_images"></script>
-  <script src="js/components/inventoryView.js?v=20260824_v25_images"></script>
-  <script src="js/components/ctvView.js?v=20260824_v25_images"></script>
-  <script src="js/components/driverView.js?v=20260824_v25_images"></script>
-  <script src="js/components/userView.js?v=20260824_v25_images"></script>
-  <script src="js/components/authModal.js?v=20260824_v25_images"></script>
-  <script src="js/components/quickBuyModal.js?v=20260824_v25_images"></script>
-  <script src="js/components/remoteConnect.js?v=20260824_v25_images"></script>
-  <script src="js/components/messengerView.js?v=20260824_v25_images"></script>
-  <script src="js/app.js?v=20260824_v25_images"></script>
+  <script src="js/api.js?v=20260825_region_management"></script>
+  <script src="js/store.js?v=20260825_region_management"></script>
+  <script src="js/components/priceListView.js?v=20260825_region_management"></script>
+  <script src="js/components/dashboardView.js?v=20260825_region_management"></script>
+  <script src="js/components/inventoryView.js?v=20260825_region_management"></script>
+  <script src="js/components/ctvView.js?v=20260825_region_management"></script>
+  <script src="js/components/driverView.js?v=20260825_region_management"></script>
+  <script src="js/components/userView.js?v=20260825_region_management"></script>
+  <script src="js/components/authModal.js?v=20260825_region_management"></script>
+  <script src="js/components/quickBuyModal.js?v=20260825_region_management"></script>
+  <script src="js/components/remoteConnect.js?v=20260825_region_management"></script>
+  <script src="js/components/messengerView.js?v=20260825_region_management"></script>
+  <script src="js/app.js?v=20260825_region_management"></script>
 </body>
 </html>

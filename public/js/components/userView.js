@@ -2,6 +2,8 @@ class UserView {
   constructor() {
     this.container = document.getElementById('users-table-container');
     this.commissionContainer = document.getElementById('commission-live-table-container');
+    this.regionsContainer = document.getElementById('regions-table-container');
+    this.formAddRegion = document.getElementById('form-add-region');
     this.addUserBtn = document.getElementById('btn-add-user-modal');
     this.saveCommissionBtn = document.getElementById('btn-save-commission-settings');
     this.regions = ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ', 'Chưa phân công'];
@@ -21,6 +23,29 @@ class UserView {
 
     if (this.saveCommissionBtn) {
       this.saveCommissionBtn.addEventListener('click', () => this.handleSaveCommissionSettings());
+    }
+
+    if (this.formAddRegion) {
+      this.formAddRegion.addEventListener('submit', (e) => this.handleAddRegion(e));
+    }
+  }
+
+  async handleAddRegion(e) {
+    e.preventDefault();
+    const input = document.getElementById('input-new-region-name');
+    const name = input?.value.trim();
+    if (!name) {
+      alert('⚠️ Vui lòng nhập tên khu vực mới!');
+      return;
+    }
+
+    const res = await window.API.addRegion(name);
+    if (res.success) {
+      alert(res.message);
+      if (input) input.value = '';
+      window.store.fetchAll();
+    } else {
+      alert(`⚠️ ${res.message}`);
     }
   }
 
@@ -78,226 +103,311 @@ class UserView {
     const standardRateInput = document.getElementById('input-commission-standard-rate');
     const topMultInput = document.getElementById('input-commission-top-mult');
 
-    if (topPointValInput && document.activeElement !== topPointValInput) topPointValInput.value = settings.topPointValue || 1000;
-    if (standardPointValInput && document.activeElement !== standardPointValInput) standardPointValInput.value = settings.standardPointValue || 500;
-    if (topRateInput && document.activeElement !== topRateInput) topRateInput.value = settings.topRate || 15;
-    if (standardRateInput && document.activeElement !== standardRateInput) standardRateInput.value = settings.standardRate || 8;
-    if (topMultInput && document.activeElement !== topMultInput) topMultInput.value = settings.topBonusPointsMultiplier || 1.5;
+    if (topPointValInput && !topPointValInput.dataset.userEdited) topPointValInput.value = settings.topPointValue || 1000;
+    if (standardPointValInput && !standardPointValInput.dataset.userEdited) standardPointValInput.value = settings.standardPointValue || 500;
+    if (topRateInput && !topRateInput.dataset.userEdited) topRateInput.value = settings.topRate !== undefined ? settings.topRate : 15;
+    if (standardRateInput && !standardRateInput.dataset.userEdited) standardRateInput.value = settings.standardRate !== undefined ? settings.standardRate : 8;
+    if (topMultInput && !topMultInput.dataset.userEdited) topMultInput.value = settings.topBonusPointsMultiplier || 1.5;
 
-    const list = leaderboard || [];
+    [topPointValInput, standardPointValInput, topRateInput, standardRateInput, topMultInput].forEach(inp => {
+      if (inp) {
+        inp.addEventListener('input', () => { inp.dataset.userEdited = "true"; });
+      }
+    });
 
-    if (list.length === 0) {
-      this.commissionContainer.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 16px;">Chưa có dữ liệu Cộng tác viên để tính hoa hồng theo điểm</div>';
+    const topCtvs = leaderboard || [];
+    const topPointVal = settings.topPointValue || 1000;
+    const standardPointVal = settings.standardPointValue || 500;
+
+    if (topCtvs.length === 0) {
+      this.commissionContainer.innerHTML = `
+        <div style="color: var(--text-muted); padding: 16px; font-size: 13px;">Chưa có dữ liệu CTV để tính toán hoa hồng thực tế.</div>
+      `;
       return;
     }
 
     this.commissionContainer.innerHTML = `
-      <div class="table-responsive">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th># Thứ Hạng</th>
-              <th>Cộng Tác Viên</th>
-              <th>Khu Vực</th>
-              <th>Điểm Tích Lũy Tuần</th>
-              <th>Mức Quy Đổi Đơn Giá</th>
-              <th>Tỷ Lệ Chiết Khấu %</th>
-              <th>Hoa Hồng Thực Nhận Tuần (Điểm x Đơn Giá)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${list.map((ctv, index) => {
-              const isTop1 = index === 0;
-              const pointVal = ctv.pointValue || (isTop1 ? (settings.topPointValue || 1000) : (settings.standardPointValue || 500));
-              const discountRate = ctv.discountRate || (isTop1 ? settings.topRate : settings.standardRate);
-              const estimatedCommission = ctv.estimatedCommission !== undefined ? ctv.estimatedCommission : ((ctv.points || 0) * pointVal);
+      <table class="data-table" style="font-size: 13px;">
+        <thead>
+          <tr>
+            <th>Hạng</th>
+            <th>Cộng Tác Viên</th>
+            <th>Khu Vực</th>
+            <th>Tổng Điểm Tích Lũy</th>
+            <th>Doanh Số Tích Lũy</th>
+            <th>Quy Định Tính Hoa Hồng</th>
+            <th>Hoa Hồng Dự Kiến Nhận</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${topCtvs.map((ctv, idx) => {
+            const isTop1 = idx === 0;
+            const pointRate = isTop1 ? topPointVal : standardPointVal;
+            const bonusMult = isTop1 ? (settings.topBonusPointsMultiplier || 1.5) : 1.0;
+            const estComm = (ctv.points || 0) * pointRate;
 
-              let rateBadge = '';
-              if (isTop1) {
-                rateBadge = `<span class="badge badge-success" style="font-size: 12px; padding: 6px 10px; font-weight: 700;">👑 Top 1 Tuần -> 1.000đ / 1 điểm</span>`;
-              } else {
-                rateBadge = `<span class="badge badge-info" style="font-size: 12px; padding: 4px 8px;">💼 CTV Thường -> 500đ / 1 điểm</span>`;
-              }
-
-              return `
-                <tr style="${isTop1 ? 'background: rgba(16, 185, 129, 0.08); border-left: 4px solid var(--success);' : ''}">
-                  <td style="font-weight: 800; text-align: center;">${isTop1 ? '👑 Top 1' : index + 1}</td>
-                  <td style="font-weight: 700; color: var(--text-primary);">
-                    ${ctv.name}
-                    <div style="font-size: 11px; color: var(--text-muted); font-weight: normal;">📞 ${ctv.phone}</div>
-                  </td>
-                  <td>📍 ${ctv.region}</td>
-                  <td style="color: var(--success); font-weight: 800; font-size: 15px;">+${ctv.points} pts</td>
-                  <td>${rateBadge}</td>
-                  <td style="font-weight: 600; color: var(--accent-primary);">${discountRate}%</td>
-                  <td style="color: var(--success); font-weight: 800; font-size: 16px;">
-                    ${(estimatedCommission || 0).toLocaleString()} đ
-                    <div style="font-size: 11px; color: var(--text-muted); font-weight: normal;">(${ctv.points} pts × ${pointVal.toLocaleString()}đ)</div>
-                  </td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
+            return `
+              <tr style="${isTop1 ? 'background: rgba(245, 158, 11, 0.08); font-weight: 700;' : ''}">
+                <td style="font-weight: 800;">
+                  ${isTop1 ? '👑 Top 1' : idx === 1 ? '🥈 Top 2' : idx === 2 ? '🥉 Top 3' : `#${idx + 1}`}
+                </td>
+                <td>
+                  <div style="font-weight: 700;">${ctv.name}</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">${ctv.phone}</div>
+                </td>
+                <td><span class="badge badge-secondary">${ctv.region || 'Hà Nội'}</span></td>
+                <td style="font-weight: 800; color: var(--accent-primary);">${(ctv.points || 0).toLocaleString()} pts</td>
+                <td style="font-weight: 700; color: var(--success);">${(ctv.totalSales || 0).toLocaleString()} đ</td>
+                <td>
+                  <span class="badge ${isTop1 ? 'badge-warning' : 'badge-secondary'}" style="font-size: 11px;">
+                    ${isTop1 ? `👑 Mức Top 1: ${topPointVal.toLocaleString()}đ/pts (X${bonusMult})` : `💼 Mức Thường: ${standardPointVal.toLocaleString()}đ/pts`}
+                  </span>
+                </td>
+                <td style="font-weight: 800; font-size: 14px; color: var(--success);">
+                  🎁 ${estComm.toLocaleString()} đ
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
     `;
   }
 
-  async render() {
-    this.container = document.getElementById('users-table-container');
-    this.commissionContainer = document.getElementById('commission-live-table-container');
-    const state = window.store ? window.store.state : null;
-    if (state) {
-      this.renderCommissionTable(state);
+  async renderRegionsTable(state) {
+    if (!this.regionsContainer) return;
+    const { regions, users, orders } = state;
+
+    let regionList = [];
+    try {
+      const res = await window.API.getRegionsDetailed();
+      if (res.success && res.data && res.data.length > 0) {
+        regionList = res.data;
+      }
+    } catch (e) {}
+
+    if (regionList.length === 0) {
+      const names = (regions && regions.length > 0) ? regions : this.regions;
+      regionList = names.filter(n => n !== 'Chưa phân công').map((name, idx) => {
+        const uCount = (users || []).filter(u => u.region === name).length;
+        const oCount = (orders || []).filter(o => o.ctvRegion === name || o.ctv_region === name).length;
+        return { id: idx + 1, name, userCount: uCount, orderCount: oCount };
+      });
     }
 
+    if (regionList.length === 0) {
+      this.regionsContainer.innerHTML = `<div style="padding: 16px; color: var(--text-muted);">Chưa có khu vực nào.</div>`;
+      return;
+    }
+
+    this.regionsContainer.innerHTML = `
+      <table class="data-table" style="font-size: 13px;">
+        <thead>
+          <tr>
+            <th style="width: 50px;">STT</th>
+            <th>Tên Khu Vực Bán Hàng / Giao Hàng</th>
+            <th style="text-align: center;">Số Tài Khoản / CTV</th>
+            <th style="text-align: center;">Số Đơn Hàng Phụ Trách</th>
+            <th style="text-align: right; min-width: 180px;">Thao Tác Quản Lý</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${regionList.map((r, idx) => `
+            <tr>
+              <td style="font-weight: 700; color: var(--text-secondary);">${idx + 1}</td>
+              <td>
+                <div style="font-weight: 800; font-size: 14px; color: var(--accent-primary); display: flex; align-items: center; gap: 6px;">
+                  📍 ${r.name}
+                </div>
+              </td>
+              <td style="text-align: center;">
+                <span class="badge badge-secondary" style="font-weight: 700;">👤 ${r.userCount} tài khoản</span>
+              </td>
+              <td style="text-align: center;">
+                <span class="badge badge-success" style="font-weight: 700;">📦 ${r.orderCount} đơn</span>
+              </td>
+              <td style="text-align: right;">
+                <div style="display: flex; justify-content: flex-end; gap: 6px;">
+                  <button type="button" class="btn btn-warning btn-sm btn-rename-region" data-name="${r.name}" title="Thay đổi tên khu vực này">
+                    ✏️ Đổi Tên
+                  </button>
+                  <button type="button" class="btn btn-danger btn-sm btn-delete-region" data-name="${r.name}" title="Xóa khu vực này">
+                    🗑️ Xóa
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+    this.regionsContainer.querySelectorAll('.btn-rename-region').forEach(btn => {
+      btn.addEventListener('click', () => this.handleRenameRegion(btn.dataset.name));
+    });
+
+    this.regionsContainer.querySelectorAll('.btn-delete-region').forEach(btn => {
+      btn.addEventListener('click', () => this.handleDeleteRegion(btn.dataset.name));
+    });
+  }
+
+  async handleRenameRegion(oldName) {
+    if (!oldName) return;
+    const newName = prompt(`✏️ Nhập tên mới cho khu vực "${oldName}":`, oldName);
+    if (!newName || !newName.trim() || newName.trim() === oldName) return;
+
+    const res = await window.API.renameRegion(oldName, newName.trim());
+    if (res.success) {
+      alert(res.message);
+      await window.store.fetchAll();
+    } else {
+      alert(`⚠️ ${res.message}`);
+    }
+  }
+
+  async handleDeleteRegion(name) {
+    if (!name) return;
+    if (!confirm(`⚠️ Bạn có chắc chắn muốn xóa khu vực "${name}"?\nTất cả tài khoản thuộc khu vực này sẽ được chuyển sang "Chưa phân công".`)) {
+      return;
+    }
+
+    const res = await window.API.deleteRegion(name);
+    if (res.success) {
+      alert(res.message);
+      await window.store.fetchAll();
+    } else {
+      alert(`⚠️ ${res.message}`);
+    }
+  }
+
+  async render() {
+    await this.fetchRegions();
+    const state = window.store.getState();
+
+    this.renderCommissionTable(state);
+    this.renderUsersTable(state);
+    this.renderRegionsTable(state);
+  }
+
+  renderUsersTable(state) {
     if (!this.container) return;
 
-    await this.fetchRegions();
-    this.container.innerHTML = '<div style="text-align: center; padding: 20px;">Đang tải danh sách tài khoản...</div>';
+    const { users, currentUser } = state;
+    const isAdmin = currentUser?.role === 'ADMIN';
 
-    const res = await window.API.getUsers();
-    if (!res.success || !res.data) {
-      this.container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--accent-danger);">Không thể tải danh sách người dùng.</div>';
+    if (!users || users.length === 0) {
+      this.container.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+          Chưa có tài khoản người dùng nào.
+        </div>
+      `;
       return;
     }
-
-    let users = res.data;
-
-    if (users.length === 0) {
-      this.container.innerHTML = '<div style="text-align: center; padding: 20px;">Chưa có tài khoản người dùng nào được đăng ký.</div>';
-      return;
-    }
-
-    // Filter controls UI & Sync VPS Toolbar
-    let filterHtml = `
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-        <div style="font-size: 14px; font-weight: 600; color: var(--text-primary);">
-          👥 Tổng số tài khoản: <span style="color: var(--accent-primary); font-weight: 700;">${users.length}</span>
-        </div>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <button id="btn-sync-vps-code" class="btn btn-warning" style="font-size: 13px; font-weight: 600; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border: none; border-radius: 6px; cursor: pointer;">
-            🔄 Đồng bộ & Cập nhật Code VPS
-          </button>
-          <label style="font-size: 13px; color: var(--text-secondary);">📍 Sắp xếp / Lọc khu vực:</label>
-          <select id="user-region-filter-select" class="form-select" style="width: auto; font-size: 13px;">
-            <option value="ALL">🌐 Tất cả khu vực</option>
-            ${this.regions.map(r => `<option value="${r}" ${this.selectedRegionFilter === r ? 'selected' : ''}>${r}</option>`).join('')}
-          </select>
-        </div>
-      </div>
-    `;
 
     let filteredUsers = users;
     if (this.selectedRegionFilter !== 'ALL') {
       filteredUsers = users.filter(u => u.region === this.selectedRegionFilter);
     }
 
-    let tableHtml = `
-      <div class="table-responsive">
-        <table class="table" style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Họ và Tên</th>
-              <th>Số Điện Thoại</th>
-              <th>Trạng Thái CTV</th>
-              <th>Khu Vực (Admin sắp xếp)</th>
-              <th>Vai Trò (Admin duyệt)</th>
-              <th>Thao Tác</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
-
-    if (filteredUsers.length === 0) {
-      tableHtml += `<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-muted);">Không có tài khoản nào thuộc khu vực "${this.selectedRegionFilter}"</td></tr>`;
-    } else {
-      filteredUsers.forEach((user, index) => {
-        let ctvStatusBadge = '<span class="badge badge-secondary" style="font-size: 11px;">Khách hàng</span>';
-        if (user.ctvRequest === 'PENDING') {
-          ctvStatusBadge = '<span class="badge badge-warning" style="font-size: 11px; padding: 4px 8px;">⏳ Đang chờ duyệt CTV</span>';
-        } else if (user.role === 'CTV' || user.ctvRequest === 'APPROVED') {
-          ctvStatusBadge = '<span class="badge badge-success" style="font-size: 11px; padding: 4px 8px;">💼 Cộng Tác Viên</span>';
-        }
-
-        const regionOptionsHtml = this.regions.map(r => 
-          `<option value="${r}" ${user.region === r ? 'selected' : ''}>${r}</option>`
-        ).join('');
-
-        const roleOptionsHtml = `
-          <option value="CUSTOMER" ${user.role === 'CUSTOMER' ? 'selected' : ''}>🛒 Khách Hàng</option>
-          <option value="CTV" ${user.role === 'CTV' ? 'selected' : ''}>💼 Cộng Tác Viên</option>
-          <option value="DRIVER" ${user.role === 'DRIVER' ? 'selected' : ''}>🚚 Tài Xế Giao Hàng</option>
-          <option value="ADMIN" ${user.role === 'ADMIN' ? 'selected' : ''}>👑 Quản Trị Viên</option>
-        `;
-
-        const isPendingCTV = user.ctvRequest === 'PENDING';
-
-        tableHtml += `
-          <tr data-user-id="${user.id}">
-            <td>${index + 1}</td>
-            <td style="font-weight: 600;">${user.name}</td>
-            <td style="font-family: monospace; color: var(--accent-primary); font-weight: 600;">${user.phone}</td>
-            <td>${ctvStatusBadge}</td>
-            <td>
-              <select class="form-select select-user-region" style="font-size: 12px; padding: 4px 8px;">
-                ${regionOptionsHtml}
-              </select>
-            </td>
-            <td>
-              <select class="form-select select-user-role" style="font-size: 12px; padding: 4px 8px;">
-                ${roleOptionsHtml}
-              </select>
-            </td>
-            <td>
-              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                ${isPendingCTV ? `<button class="btn btn-success btn-approve-ctv" style="font-size: 11px; padding: 4px 8px;" title="Duyệt làm CTV">✅ Duyệt CTV</button>` : ''}
-                <button class="btn btn-primary btn-save-user-role" style="font-size: 11px; padding: 4px 8px;">💾 Lưu</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      });
-    }
-
-    tableHtml += `
-          </tbody>
-        </table>
+    this.container.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 13px; color: var(--text-secondary);">
+          Hiển thị <b>${filteredUsers.length}</b> / <b>${users.length}</b> tài khoản
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-size: 12px; font-weight: 600;">Lọc theo khu vực:</label>
+          <select id="user-filter-region" class="form-control" style="width: auto; font-size: 12px; padding: 4px 8px;">
+            <option value="ALL" ${this.selectedRegionFilter === 'ALL' ? 'selected' : ''}>🌍 Tất cả khu vực</option>
+            ${this.regions.map(r => `<option value="${r}" ${this.selectedRegionFilter === r ? 'selected' : ''}>${r}</option>`).join('')}
+          </select>
+        </div>
       </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Họ & Tên</th>
+            <th>Số Điện Thoại</th>
+            <th>Vai Trò (Role)</th>
+            <th>Khu Vực Phụ Trách</th>
+            <th>Yêu Cầu Làm CTV</th>
+            <th>Ngày Đăng Ký</th>
+            <th style="text-align: right;">Thao Tác Quản Trị</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filteredUsers.map(u => {
+            const isCurrentUser = currentUser?.id === u.id || currentUser?.phone === u.phone;
+            const regionOptionsHtml = this.regions.map(r => 
+              `<option value="${r}" ${u.region === r ? 'selected' : ''}>${r}</option>`
+            ).join('');
+
+            let ctvReqBadge = '<span class="badge badge-secondary">Khách hàng</span>';
+            if (u.ctvRequest === 'PENDING') {
+              ctvReqBadge = '<span class="badge badge-warning" style="font-weight: 700;">⏳ Đang chờ duyệt CTV</span>';
+            } else if (u.ctvRequest === 'APPROVED' || u.role === 'CTV') {
+              ctvReqBadge = '<span class="badge badge-success">✅ Đã duyệt CTV</span>';
+            }
+
+            return `
+              <tr data-user-id="${u.id}">
+                <td>
+                  <div style="font-weight: 700;">${u.name} ${isCurrentUser ? '<span class="badge badge-primary" style="font-size: 10px;">Bạn</span>' : ''}</div>
+                </td>
+                <td style="font-family: monospace; font-size: 13px;">${u.phone}</td>
+                <td>
+                  ${isAdmin && !isCurrentUser ? `
+                    <select class="form-control select-user-role" style="font-size: 12px; padding: 2px 6px; font-weight: 600;">
+                      <option value="CUSTOMER" ${u.role === 'CUSTOMER' ? 'selected' : ''}>Khách Hàng</option>
+                      <option value="CTV" ${u.role === 'CTV' ? 'selected' : ''}>Cộng Tác Viên (CTV)</option>
+                      <option value="DRIVER" ${u.role === 'DRIVER' ? 'selected' : ''}>Tài Xế Giao Hàng</option>
+                      <option value="ADMIN" ${u.role === 'ADMIN' ? 'selected' : ''}>Quản Trị Viên (Admin)</option>
+                    </select>
+                  ` : `
+                    <span class="badge ${u.role === 'ADMIN' ? 'badge-danger' : u.role === 'CTV' ? 'badge-success' : u.role === 'DRIVER' ? 'badge-primary' : 'badge-secondary'}">
+                      ${u.role}
+                    </span>
+                  `}
+                </td>
+                <td>
+                  ${isAdmin ? `
+                    <select class="form-control select-user-region" style="font-size: 12px; padding: 2px 6px;">
+                      ${regionOptionsHtml}
+                    </select>
+                  ` : `
+                    <span class="badge badge-secondary">${u.region || 'Chưa phân công'}</span>
+                  `}
+                </td>
+                <td>${ctvReqBadge}</td>
+                <td style="font-size: 12px; color: var(--text-muted);">${u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN') : 'Mới'}</td>
+                <td style="text-align: right;">
+                  ${isAdmin ? `
+                    <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                      ${u.ctvRequest === 'PENDING' ? `
+                        <button class="btn btn-sm btn-success btn-approve-ctv" title="Duyệt người dùng này thành CTV">
+                          ✅ Duyệt CTV
+                        </button>
+                      ` : ''}
+                      <button class="btn btn-sm btn-primary btn-save-user-role" title="Lưu phân quyền & khu vực">
+                        💾 Lưu
+                      </button>
+                    </div>
+                  ` : `
+                    <span style="font-size: 11px; color: var(--text-muted);">Không có quyền</span>
+                  `}
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
     `;
 
-    this.container.innerHTML = filterHtml + tableHtml;
-
-    const filterSelect = document.getElementById('user-region-filter-select');
+    const filterSelect = document.getElementById('user-filter-region');
     if (filterSelect) {
       filterSelect.addEventListener('change', (e) => {
         this.selectedRegionFilter = e.target.value;
-        this.render();
-      });
-    }
-
-    const syncBtn = document.getElementById('btn-sync-vps-code');
-    if (syncBtn) {
-      syncBtn.addEventListener('click', async () => {
-        if (!confirm('Bạn có chắc chắn muốn kích hoạt Đồng bộ & Cập nhật Code từ Git Repository lên VPS Linux không?')) {
-          return;
-        }
-        syncBtn.disabled = true;
-        syncBtn.innerHTML = '⏳ Đang kéo code VPS...';
-        try {
-          const res = await window.API.syncCode();
-          if (res.success) {
-            alert('🎉 ' + res.message + '\n\n' + (res.logs ? res.logs.join('\n') : ''));
-          } else {
-            alert('❌ Lỗi đồng bộ: ' + (res.message || 'Không thể đồng bộ code'));
-          }
-        } catch (e) {
-          alert('❌ Lỗi kết nối khi đồng bộ: ' + e.message);
-        } finally {
-          syncBtn.disabled = false;
-          syncBtn.innerHTML = '🔄 Đồng bộ & Cập nhật Code VPS';
-        }
+        this.renderUsersTable(state);
       });
     }
 
@@ -328,7 +438,6 @@ class UserView {
     if (res.success) {
       alert(res.message);
       window.store.fetchAll();
-      this.render();
     } else {
       alert(`⚠️ ${res.message}`);
     }

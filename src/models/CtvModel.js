@@ -25,11 +25,67 @@ class CtvModel {
   }
 
   /**
-   * Lấy danh sách Khu vực
+   * Lấy danh sách Khu vực (Simple Array)
    */
   static async getRegions() {
+    try {
+      const mysqlRegions = await dbMySQL.getRegions();
+      if (mysqlRegions && mysqlRegions.length > 0) return mysqlRegions;
+    } catch (err) {}
+
     const data = dbJSON.readData();
     return data.regions || [];
+  }
+
+  /**
+   * Lấy danh sách Khu vực chi tiết kèm số tài khoản & đơn hàng
+   */
+  static async getRegionsDetailed() {
+    try {
+      const detailed = await dbMySQL.getRegionsDetailed();
+      if (detailed && detailed.length > 0) return detailed;
+    } catch (err) {}
+
+    const data = dbJSON.readData();
+    const regions = data.regions || [];
+    return regions.map((name, id) => {
+      const uCount = (data.users || []).filter(u => u.region === name).length;
+      const oCount = (data.orders || []).filter(o => o.ctvRegion === name || o.ctv_region === name).length;
+      return { id: id + 1, name, userCount: uCount, orderCount: oCount };
+    });
+  }
+
+  /**
+   * Thêm khu vực mới
+   */
+  static async addRegion(name) {
+    try {
+      await dbMySQL.addRegion(name);
+    } catch (err) {}
+    dbJSON.addRegion(name);
+    return true;
+  }
+
+  /**
+   * Đổi tên khu vực và tự động đồng bộ tài khoản/đơn hàng
+   */
+  static async renameRegion(oldName, newName) {
+    try {
+      await dbMySQL.renameRegion(oldName, newName);
+    } catch (err) {}
+    dbJSON.renameRegion(oldName, newName);
+    return true;
+  }
+
+  /**
+   * Xóa khu vực
+   */
+  static async deleteRegion(name) {
+    try {
+      await dbMySQL.deleteRegion(name);
+    } catch (err) {}
+    dbJSON.deleteRegion(name);
+    return true;
   }
 
   /**

@@ -8,8 +8,12 @@ router.get('/ctvs', CtvController.getCtvs);
 // Danh sách Tài xế
 router.get('/drivers', CtvController.getDrivers);
 
-// Danh sách Khu vực
+// Quản lý Khu vực bán hàng / giao hàng
 router.get('/regions', CtvController.getRegions);
+router.get('/regions/detailed', CtvController.getRegionsDetailed);
+router.post('/regions', CtvController.addRegion);
+router.put('/regions/rename', CtvController.renameRegion);
+router.delete('/regions', CtvController.deleteRegion);
 
 // Cấu hình chiết khấu hoa hồng
 router.get('/ctvs/commission-settings', CtvController.getCommissionSettings);

@@ -253,6 +253,44 @@ class DatabaseEngine {
       return false;
     }
   }
+
+  addRegion(name) {
+    const data = this.readData();
+    if (!data.regions) data.regions = [];
+    const trimmed = String(name).trim();
+    if (trimmed && !data.regions.includes(trimmed)) {
+      data.regions.push(trimmed);
+      this.saveData(data);
+    }
+    return data.regions;
+  }
+
+  renameRegion(oldName, newName) {
+    const data = this.readData();
+    if (!data.regions) return [];
+    const oldTrimmed = String(oldName).trim();
+    const newTrimmed = String(newName).trim();
+    const idx = data.regions.indexOf(oldTrimmed);
+    if (idx !== -1 && newTrimmed) {
+      data.regions[idx] = newTrimmed;
+      (data.users || []).forEach(u => { if (u.region === oldTrimmed) u.region = newTrimmed; });
+      (data.ctvs || []).forEach(c => { if (c.region === oldTrimmed) c.region = newTrimmed; });
+      (data.orders || []).forEach(o => { if (o.ctvRegion === oldTrimmed) o.ctvRegion = newTrimmed; });
+      this.saveData(data);
+    }
+    return data.regions;
+  }
+
+  deleteRegion(name) {
+    const data = this.readData();
+    if (!data.regions) return [];
+    const trimmed = String(name).trim();
+    data.regions = data.regions.filter(r => r !== trimmed);
+    (data.users || []).forEach(u => { if (u.region === trimmed) u.region = 'Chưa phân công'; });
+    (data.ctvs || []).forEach(c => { if (c.region === trimmed) c.region = 'Chưa phân công'; });
+    this.saveData(data);
+    return data.regions;
+  }
 }
 
 module.exports = new DatabaseEngine();

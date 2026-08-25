@@ -944,6 +944,65 @@ class MySQLDatabaseEngine {
     return rows.map(r => r.name);
   }
 
+  async getRegionsDetailed() {
+    await this.initDatabase();
+    if (!this.pool) throw new Error('Chưa kết nối CSDL MySQL');
+    const [rows] = await this.pool.query('SELECT id, name FROM regions ORDER BY id ASC');
+
+    const result = [];
+    for (const r of rows) {
+      const [uRows] = await this.pool.query('SELECT COUNT(*) AS total FROM users WHERE region = ?', [r.name]);
+      const [oRows] = await this.pool.query('SELECT COUNT(*) AS total FROM orders WHERE ctv_region = ?', [r.name]);
+      result.push({
+        id: r.id,
+        name: r.name,
+        userCount: uRows[0]?.total || 0,
+        orderCount: oRows[0]?.total || 0
+      });
+    }
+    return result;
+  }
+
+  async addRegion(name) {
+    await this.initDatabase();
+    if (!this.pool) throw new Error('Chưa kết nối CSDL MySQL');
+    const trimmed = String(name).trim();
+    if (!trimmed) throw new Error('Tên khu vực không được để trống');
+    await this.pool.query('INSERT IGNORE INTO regions (name) VALUES (?)', [trimmed]);
+    return true;
+  }
+
+  async renameRegion(oldName, newName) {
+    await this.initDatabase();
+    if (!this.pool) throw new Error('Chưa kết nối CSDL MySQL');
+    const oldTrimmed = String(oldName).trim();
+    const newTrimmed = String(newName).trim();
+    if (!newTrimmed) throw new Error('Tên khu vực mới không được để trống');
+
+    // 1. Cập nhật tên trong bảng regions
+    await this.pool.query('UPDATE regions SET name = ? WHERE name = ?', [newTrimmed, oldTrimmed]);
+
+    // 2. Tự động đồng bộ sang users, ctvs và orders
+    await this.pool.query('UPDATE users SET region = ? WHERE region = ?', [newTrimmed, oldTrimmed]);
+    await this.pool.query('UPDATE ctvs SET region = ? WHERE region = ?', [newTrimmed, oldTrimmed]);
+    await this.pool.query('UPDATE orders SET ctv_region = ? WHERE ctv_region = ?', [newTrimmed, oldTrimmed]);
+
+    return true;
+  }
+
+  async deleteRegion(name) {
+    await this.initDatabase();
+    if (!this.pool) throw new Error('Chưa kết nối CSDL MySQL');
+    const trimmed = String(name).trim();
+    await this.pool.query('DELETE FROM regions WHERE name = ?', [trimmed]);
+
+    // Chuyển tài khoản/CTV thuộc khu vực bị xóa sang 'Chưa phân công'
+    await this.pool.query('UPDATE users SET region = "Chưa phân công" WHERE region = ?', [trimmed]);
+    await this.pool.query('UPDATE ctvs SET region = "Chưa phân công" WHERE region = ?', [trimmed]);
+
+    return true;
+  }
+
   async getLeaderboard(region = 'ALL') {
     await this.initDatabase();
     if (!this.pool) throw new Error('Chưa kết nối CSDL MySQL');
