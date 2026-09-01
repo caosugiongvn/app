@@ -46,6 +46,8 @@ const API = {
   getCommissionSettings() { return this.request('/ctvs/commission-settings'); },
   updateCommissionSettings(data) { return this.request('/ctvs/commission-settings', 'POST', data); },
   getDashboardReport() { return this.request('/reports/dashboard'); },
+  recordVisit() { return this.request('/reports/visits/record', 'POST'); },
+  getVisitStats() { return this.request('/reports/visits'); },
   getNetworkInfo() { return this.request('/network-info'); },
 
   // --- AUTH & USER APIS ---

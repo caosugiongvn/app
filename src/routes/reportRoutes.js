@@ -11,4 +11,8 @@ router.get('/reports/summary', ReportController.getSummaryReport);
 // Báo cáo theo khu vực
 router.get('/reports/region', ReportController.getRegionReport);
 
+// Thống kê lượt truy cập hệ thống
+router.get('/reports/visits', ReportController.getVisitStats);
+router.post('/reports/visits/record', ReportController.recordVisit);
+
 module.exports = router;

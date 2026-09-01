@@ -88,6 +88,32 @@ class ReportController {
       return res.status(500).json({ success: false, message: 'Lỗi lấy báo cáo khu vực' });
     }
   }
+
+  /**
+   * Ghi nhận lượt truy cập hệ thống
+   */
+  static async recordVisit(req, res) {
+    try {
+      const stats = await ReportModel.recordVisit();
+      return res.json({ success: true, data: stats });
+    } catch (error) {
+      console.error('❌ Lỗi Controller recordVisit:', error);
+      return res.status(500).json({ success: false, message: 'Lỗi ghi nhận lượt truy cập' });
+    }
+  }
+
+  /**
+   * Lấy thống kê lượt truy cập hệ thống
+   */
+  static async getVisitStats(req, res) {
+    try {
+      const stats = await ReportModel.getVisitStats();
+      return res.json({ success: true, data: stats });
+    } catch (error) {
+      console.error('❌ Lỗi Controller getVisitStats:', error);
+      return res.status(500).json({ success: false, message: 'Lỗi lấy thống kê lượt truy cập' });
+    }
+  }
 }
 
 module.exports = ReportController;

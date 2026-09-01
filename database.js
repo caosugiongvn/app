@@ -291,6 +291,33 @@ class DatabaseEngine {
     this.saveData(data);
     return data.regions;
   }
+
+  recordVisit() {
+    const data = this.readData();
+    const today = new Date().toISOString().split('T')[0];
+    if (!data.siteVisits) {
+      data.siteVisits = { totalVisits: 100, todayVisits: 1, lastVisitDate: today };
+    }
+    if (data.siteVisits.lastVisitDate !== today) {
+      data.siteVisits.lastVisitDate = today;
+      data.siteVisits.todayVisits = 1;
+    } else {
+      data.siteVisits.todayVisits = (data.siteVisits.todayVisits || 0) + 1;
+    }
+    data.siteVisits.totalVisits = (data.siteVisits.totalVisits || 100) + 1;
+    this.saveData(data);
+    return { totalVisits: data.siteVisits.totalVisits, todayVisits: data.siteVisits.todayVisits };
+  }
+
+  getVisitStats() {
+    const data = this.readData();
+    const today = new Date().toISOString().split('T')[0];
+    if (!data.siteVisits) {
+      return { totalVisits: 100, todayVisits: 1 };
+    }
+    const todayVisits = data.siteVisits.lastVisitDate === today ? (data.siteVisits.todayVisits || 0) : 0;
+    return { totalVisits: data.siteVisits.totalVisits || 100, todayVisits: todayVisits };
+  }
 }
 
 module.exports = new DatabaseEngine();

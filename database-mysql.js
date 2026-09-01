@@ -190,6 +190,19 @@ class MySQLDatabaseEngine {
           `);
         } catch (e) {}
 
+        // Tự động đảm bảo tạo bảng site_visits (thống kê lượt truy cập hệ thống)
+        try {
+          await this.pool.query(`
+            CREATE TABLE IF NOT EXISTS \`site_visits\` (
+              \`id\` INT PRIMARY KEY DEFAULT 1,
+              \`total_visits\` INT NOT NULL DEFAULT 100,
+              \`today_visits\` INT NOT NULL DEFAULT 1,
+              \`last_visit_date\` VARCHAR(10) NOT NULL,
+              \`updated_at\` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+          `);
+        } catch (e) {}
+
         // Migration: Tự động bổ sung các cột mới nếu chưa có trong DB MySQL sẵn
         try {
           await this.pool.query(`ALTER TABLE orders ADD COLUMN approval_status ENUM('PENDING', 'APPROVED', 'REJECTED') NOT NULL DEFAULT 'PENDING';`);
@@ -1538,6 +1551,47 @@ class MySQLDatabaseEngine {
       [tpv, spv, tr, sr, mult, tpv, spv, tr, sr, mult]
     );
     return { topPointValue: tpv, standardPointValue: spv, topRate: tr, standardRate: sr, topBonusPointsMultiplier: mult };
+  }
+
+  // --- THỐNG KÊ LƯỢT TRUY CẬP HỆ THỐNG ---
+  async recordVisit() {
+    if (!this.pool) await this.initDatabase();
+    const today = new Date().toISOString().split('T')[0];
+    try {
+      const [rows] = await this.pool.query('SELECT * FROM site_visits WHERE id = 1');
+      if (!rows || rows.length === 0) {
+        await this.pool.query(
+          'INSERT INTO site_visits (id, total_visits, today_visits, last_visit_date) VALUES (1, 100, 1, ?)',
+          [today]
+        );
+        return { totalVisits: 100, todayVisits: 1 };
+      }
+      const current = rows[0];
+      let newTotal = (parseInt(current.total_visits) || 100) + 1;
+      let newToday = current.last_visit_date === today ? (parseInt(current.today_visits) || 0) + 1 : 1;
+
+      await this.pool.query(
+        'UPDATE site_visits SET total_visits = ?, today_visits = ?, last_visit_date = ? WHERE id = 1',
+        [newTotal, newToday, today]
+      );
+      return { totalVisits: newTotal, todayVisits: newToday };
+    } catch (e) {
+      return { totalVisits: 100, todayVisits: 1 };
+    }
+  }
+
+  async getVisitStats() {
+    if (!this.pool) await this.initDatabase();
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const [rows] = await this.pool.query('SELECT * FROM site_visits WHERE id = 1');
+      if (rows && rows.length > 0) {
+        const current = rows[0];
+        const todayVisits = current.last_visit_date === today ? (parseInt(current.today_visits) || 0) : 0;
+        return { totalVisits: parseInt(current.total_visits) || 100, todayVisits: todayVisits };
+      }
+    } catch (e) {}
+    return { totalVisits: 100, todayVisits: 1 };
   }
 }
 

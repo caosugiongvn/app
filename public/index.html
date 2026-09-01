@@ -598,6 +598,26 @@
         </div>
       </section>
 
+      <!-- APP FOOTER (Chỉ hiển thị Thống kê Lượt Truy Cập với Admin) -->
+      <footer id="app-footer" style="margin-top: 30px; padding: 18px 24px; border-top: 1px solid var(--border-glass); background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(10px); border-radius: var(--radius-lg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 13px; color: var(--text-muted);">
+        <div>
+          <span>© 2026 <b>Dân Chí Gia Lai</b> - Hệ Thống Quản Lý Bán Hàng & Tồn Kho</span>
+        </div>
+
+        <!-- ADMIN VISIT COUNTER BADGE (HIỂN THỊ DUY NHẤT VỚI ADMIN) -->
+        <div id="admin-visit-counter" style="display: none; align-items: center; gap: 10px; background: rgba(16, 185, 129, 0.12); padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3);">
+          <span style="font-weight: 700; color: var(--success); display: inline-flex; align-items: center; gap: 6px;">
+            📊 Lượt Truy Cập Hệ Thống:
+          </span>
+          <span style="font-weight: 800; color: var(--text-primary);">
+            Tổng: <b id="footer-visit-total" style="color: var(--accent-primary);">0</b> lượt
+          </span>
+          <span style="color: var(--text-muted);">|</span>
+          <span style="font-weight: 800; color: var(--text-primary);">
+            Hôm nay: <b id="footer-visit-today" style="color: var(--success);">0</b> lượt
+          </span>
+        </div>
+      </footer>
     </main>
   </div>
 
@@ -1032,18 +1052,18 @@
   </div>
 
   <!-- JS Modules (Cache Busting Enforced) -->
-  <script src="js/api.js?v=20260825_region_render_v2"></script>
-  <script src="js/store.js?v=20260825_region_render_v2"></script>
-  <script src="js/components/priceListView.js?v=20260825_region_render_v2"></script>
-  <script src="js/components/dashboardView.js?v=20260825_region_render_v2"></script>
-  <script src="js/components/inventoryView.js?v=20260825_region_render_v2"></script>
-  <script src="js/components/ctvView.js?v=20260825_region_render_v2"></script>
-  <script src="js/components/driverView.js?v=20260825_region_render_v2"></script>
-  <script src="js/components/userView.js?v=20260825_region_render_v2"></script>
-  <script src="js/components/authModal.js?v=20260825_region_render_v2"></script>
-  <script src="js/components/quickBuyModal.js?v=20260825_region_render_v2"></script>
-  <script src="js/components/remoteConnect.js?v=20260825_region_render_v2"></script>
-  <script src="js/components/messengerView.js?v=20260825_region_render_v2"></script>
-  <script src="js/app.js?v=20260825_region_render_v2"></script>
+  <script src="js/api.js?v=20260901_visit_counter"></script>
+  <script src="js/store.js?v=20260901_visit_counter"></script>
+  <script src="js/components/priceListView.js?v=20260901_visit_counter"></script>
+  <script src="js/components/dashboardView.js?v=20260901_visit_counter"></script>
+  <script src="js/components/inventoryView.js?v=20260901_visit_counter"></script>
+  <script src="js/components/ctvView.js?v=20260901_visit_counter"></script>
+  <script src="js/components/driverView.js?v=20260901_visit_counter"></script>
+  <script src="js/components/userView.js?v=20260901_visit_counter"></script>
+  <script src="js/components/authModal.js?v=20260901_visit_counter"></script>
+  <script src="js/components/quickBuyModal.js?v=20260901_visit_counter"></script>
+  <script src="js/components/remoteConnect.js?v=20260901_visit_counter"></script>
+  <script src="js/components/messengerView.js?v=20260901_visit_counter"></script>
+  <script src="js/app.js?v=20260901_visit_counter"></script>
 </body>
 </html>

@@ -51,6 +51,30 @@ class ReportModel {
 
     return Object.values(regionMap);
   }
+
+  /**
+   * Ghi nhận lượt truy cập hệ thống
+   */
+  static async recordVisit() {
+    const dbMySQL = require('../../database-mysql');
+    try {
+      const mysqlStats = await dbMySQL.recordVisit();
+      if (mysqlStats) return mysqlStats;
+    } catch (err) {}
+    return dbJSON.recordVisit();
+  }
+
+  /**
+   * Lấy thống kê lượt truy cập hệ thống
+   */
+  static async getVisitStats() {
+    const dbMySQL = require('../../database-mysql');
+    try {
+      const mysqlStats = await dbMySQL.getVisitStats();
+      if (mysqlStats) return mysqlStats;
+    } catch (err) {}
+    return dbJSON.getVisitStats();
+  }
 }
 
 module.exports = ReportModel;
