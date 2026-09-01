@@ -350,44 +350,48 @@ function initAppViews() {
 }
 
 /* ==========================================================================
-   Thống kê lượt truy cập hệ thống (Hiển thị DUY NHẤT cho tài khoản ADMIN)
+   Thống kê lượt truy cập hệ thống (Hiển thị & Cập nhật thời gian thực cho ADMIN)
    ========================================================================== */
 async function initVisitCounter() {
-    // 1. Ghi nhận lượt truy cập 1 lần mỗi phiên duyệt web
-    if (!sessionStorage.getItem('site_visited_session')) {
-        try {
-            await window.API.recordVisit();
-            sessionStorage.setItem('site_visited_session', 'true');
-        } catch (e) {}
-    }
+    // 1. Tự động ghi nhận lượt truy cập vào CSDL khi tải trang
+    try {
+        const recordRes = await window.API.recordVisit();
+        if (recordRes && recordRes.success && recordRes.data && window.store) {
+            window.store.state.siteVisits = recordRes.data;
+        }
+    } catch (e) {}
 
-    // 2. Hàm cập nhật giao diện đếm lượt truy cập (Chỉ hiển thị với user ADMIN)
+    // 2. Hàm cập nhật giao diện đếm lượt truy cập thời gian thực (Chỉ hiển thị với user ADMIN)
     const updateAdminVisitCounterUI = async () => {
         const adminCounterContainer = document.getElementById('admin-visit-counter');
         if (!adminCounterContainer) return;
 
-        const currentUser = window.store ? (window.store.state?.currentUser || (typeof window.store.getState === 'function' ? window.store.getState()?.currentUser : null)) : null;
+        const state = window.store ? window.store.state : null;
+        const currentUser = state ? state.currentUser : null;
         const isAdmin = currentUser && String(currentUser.role || '').toUpperCase() === 'ADMIN';
 
         if (isAdmin) {
             adminCounterContainer.style.display = 'inline-flex';
-            try {
-                const res = await window.API.getVisitStats();
-                if (res && res.success && res.data) {
-                    const totalEl = document.getElementById('footer-visit-total');
-                    const todayEl = document.getElementById('footer-visit-today');
-                    if (totalEl) totalEl.textContent = Number(res.data.totalVisits || 0).toLocaleString('vi-VN');
-                    if (todayEl) todayEl.textContent = Number(res.data.todayVisits || 0).toLocaleString('vi-VN');
-                }
-            } catch (e) {
-                console.warn('⚠️ Error fetching visit stats:', e.message);
+            let stats = state ? state.siteVisits : null;
+            if (!stats) {
+                try {
+                    const res = await window.API.getVisitStats();
+                    if (res && res.success && res.data) stats = res.data;
+                } catch (e) {}
+            }
+
+            if (stats) {
+                const totalEl = document.getElementById('footer-visit-total');
+                const todayEl = document.getElementById('footer-visit-today');
+                if (totalEl) totalEl.textContent = Number(stats.totalVisits || 0).toLocaleString('vi-VN');
+                if (todayEl) todayEl.textContent = Number(stats.todayVisits || 0).toLocaleString('vi-VN');
             }
         } else {
             adminCounterContainer.style.display = 'none';
         }
     };
 
-    // Đăng ký tự động cập nhật khi state store thay đổi (đăng nhập / chuyển quyền)
+    // Đăng ký tự động cập nhật thời gian thực khi state store thay đổi (mỗi 10 giây hoặc khi có thay đổi)
     if (window.store) {
         window.store.subscribe(() => {
             updateAdminVisitCounterUI();
@@ -395,5 +399,5 @@ async function initVisitCounter() {
     }
 
     // Gọi lần đầu khi trang vừa tải
-    setTimeout(updateAdminVisitCounterUI, 500);
+    updateAdminVisitCounterUI();
 }

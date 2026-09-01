@@ -74,6 +74,7 @@ class AppStore {
     this.state.leaderboard = await safeFetch(() => window.API.getLeaderboard(this.state.selectedRegion), this.state.leaderboard);
     this.state.quickPurchases = await safeFetch(() => window.API.getQuickPurchases(), this.state.quickPurchases);
     this.state.commissionSettings = await safeFetch(() => window.API.getCommissionSettings(), this.state.commissionSettings);
+    this.state.siteVisits = await safeFetch(() => window.API.getVisitStats(), this.state.siteVisits);
 
     this.notify();
   }
