@@ -366,20 +366,22 @@ async function initVisitCounter() {
         const adminCounterContainer = document.getElementById('admin-visit-counter');
         if (!adminCounterContainer) return;
 
-        const currentUser = window.store ? window.store.getState()?.currentUser : null;
-        const isAdmin = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'admin');
+        const currentUser = window.store ? (window.store.state?.currentUser || (typeof window.store.getState === 'function' ? window.store.getState()?.currentUser : null)) : null;
+        const isAdmin = currentUser && String(currentUser.role || '').toUpperCase() === 'ADMIN';
 
         if (isAdmin) {
             adminCounterContainer.style.display = 'inline-flex';
             try {
                 const res = await window.API.getVisitStats();
-                if (res.success && res.data) {
+                if (res && res.success && res.data) {
                     const totalEl = document.getElementById('footer-visit-total');
                     const todayEl = document.getElementById('footer-visit-today');
                     if (totalEl) totalEl.textContent = Number(res.data.totalVisits || 0).toLocaleString('vi-VN');
                     if (todayEl) todayEl.textContent = Number(res.data.todayVisits || 0).toLocaleString('vi-VN');
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.warn('⚠️ Error fetching visit stats:', e.message);
+            }
         } else {
             adminCounterContainer.style.display = 'none';
         }

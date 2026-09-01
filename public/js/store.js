@@ -19,6 +19,10 @@ class AppStore {
     this.listeners = [];
   }
 
+  getState() {
+    return this.state;
+  }
+
   loadUserFromStorage() {
     try {
       const saved = localStorage.getItem('smart_inventory_user');
