@@ -67,6 +67,7 @@ class MySQLDatabaseEngine {
     this.pool = null;
     this.initialized = false;
     this.wpPrefix = 'wp_';
+    this.wpChecked = false;
   }
 
   /**
@@ -97,7 +98,8 @@ class MySQLDatabaseEngine {
           host: dbConfig.host,
           port: dbConfig.port,
           user: dbConfig.user,
-          password: dbConfig.password
+          password: dbConfig.password,
+          connectTimeout: 3000
         });
 
         await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${dbConfig.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
@@ -106,12 +108,13 @@ class MySQLDatabaseEngine {
         // Bỏ qua lỗi Access Denied khi user MySQL trên VPS không có quyền CREATE DATABASE
       }
 
-      // 2. Tạo Pool kết nối chính thức vào database CSDL
+      // 2. Tạo Pool kết nối chính thức vào database CSDL (Thêm connectTimeout 5s để tránh 504 Gateway Timeout)
       this.pool = mysql.createPool({
         ...dbConfig,
         waitForConnections: true,
         connectionLimit: 10,
-        queueLimit: 0
+        queueLimit: 0,
+        connectTimeout: 5000
       });
 
       // 3. Đọc và thực thi schema.sql để tạo bảng & dữ liệu mẫu nếu bảng chưa tồn tại
@@ -381,6 +384,8 @@ class MySQLDatabaseEngine {
 
   // --- SHARED WORDPRESS DATABASE HELPERS ---
   async checkWordPressTables() {
+    if (this.wpChecked && this.wpPrefix) return true;
+
     try {
       if (!this.pool) return false;
 
@@ -389,7 +394,7 @@ class MySQLDatabaseEngine {
         this.wpPrefix,
         'wp_',
         'wpx_'
-      ].filter(p => p && !p.includes('aioseo') && !p.includes('yoast'));
+      ].filter((p, i, self) => p && !p.includes('aioseo') && !p.includes('yoast') && self.indexOf(p) === i);
 
       // 1. Thử trực tiếp tìm bảng chứa sản phẩm WooCommerce (post_type = 'product')
       for (const pref of candidatePrefixes) {
@@ -397,30 +402,24 @@ class MySQLDatabaseEngine {
           const [rows] = await this.pool.query(`SELECT 1 FROM ${pref}posts WHERE post_type = 'product' LIMIT 1`);
           if (rows && rows.length > 0) {
             this.wpPrefix = pref;
+            this.wpChecked = true;
             console.log(`🎯 [WP Core Engine] Đã xác định chuẩn xác bảng sản phẩm WooCommerce gốc: "${this.wpPrefix}posts"`);
             return true;
           }
         } catch (e) {}
       }
 
-      // 2. Quét tất cả các bảng kết thúc bằng 'posts' (bỏ qua plugin)
-      const [allTables] = await this.pool.query("SHOW TABLES LIKE '%posts'");
-      if (allTables && allTables.length > 0) {
-        for (const row of allTables) {
-          const tableName = Object.values(row)[0];
-          if (tableName && tableName.endsWith('posts') && !tableName.includes('aioseo') && !tableName.includes('yoast')) {
-            const calculatedPrefix = tableName.slice(0, -5);
-            try {
-              const [check] = await this.pool.query(`SELECT 1 FROM ${calculatedPrefix}posts WHERE post_type = 'product' LIMIT 1`);
-              if (check && check.length > 0) {
-                this.wpPrefix = calculatedPrefix;
-                console.log(`🎯 [WP Core Engine] Đã xác định chuẩn xác bảng sản phẩm WooCommerce gốc: "${this.wpPrefix}posts"`);
-                return true;
-              }
-            } catch (e) {}
-          }
+      // 2. Dự phòng thử tìm bảng wp_posts chuẩn
+      try {
+        const [rows] = await this.pool.query(`SELECT 1 FROM \`wp_posts\` LIMIT 1`);
+        if (rows && rows.length > 0) {
+          this.wpPrefix = 'wp_';
+          this.wpChecked = true;
+          return true;
         }
-      }
+      } catch (e) {}
+
+      this.wpChecked = true;
       return false;
     } catch (e) {
       console.error('⚠️ checkWordPressTables error:', e.message);
